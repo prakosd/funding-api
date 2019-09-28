@@ -1,18 +1,18 @@
 const express = require("express");
 const SapCommitmentsController = require("../controllers/sap-commitments");
 const extractFile = require("../middleware/file");
-
+const checkAuth = require("../middleware/check-auth");
 const router = express.Router();
 
 router.get("", SapCommitmentsController.getMany);
 
 router.get("/:id", SapCommitmentsController.getOne);
 
-router.post("", extractFile, SapCommitmentsController.createOne);
+router.post("", checkAuth, extractFile, SapCommitmentsController.createOne);
 
-router.put("/:id", extractFile, SapCommitmentsController.updateOne);
-router.put("/setlink/:id", extractFile, SapCommitmentsController.setLink);
-router.put("/setlock/:id", extractFile, SapCommitmentsController.setLock);
+router.put("/:id", checkAuth, extractFile, SapCommitmentsController.updateOne);
+router.put("/setlink/:id", checkAuth, extractFile, SapCommitmentsController.setLink);
+router.put("/setlock/:id", checkAuth, extractFile, SapCommitmentsController.setLock);
 
 router.delete("/:id", SapCommitmentsController.deleteOne);
 

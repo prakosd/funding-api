@@ -20,7 +20,7 @@ exports.createOne = (req, res, next) => {
     isLocked: req.body.isLocked,
     isLinked: req.body.isLinked,
     lastUpdateAt: new Date(),
-    lastUpdateBy: "prakosd"
+    lastUpdateBy: req.userData.userId
   });
   sapCommitment
     .save()
@@ -60,7 +60,7 @@ exports.updateOne = (req, res, next) => {
       isLocked: req.body.isLocked,
       isLinked: req.body.isLinked,
       lastUpdateAt: new Date(),
-      lastUpdateBy: "prakosd"
+      lastUpdateBy: req.userData.userId
   };
   
   SapCommitment.findByIdAndUpdate(id, set, option)
@@ -88,7 +88,7 @@ exports.setLink = (req, res, next) => {
   const set = {
       isLinked: req.body.isLinked,
       lastUpdateAt: new Date(),
-      lastUpdateBy: "prakosd"
+      lastUpdateBy: req.userData.userId
   };
   
   SapCommitment.findByIdAndUpdate(id, set, option)
@@ -116,7 +116,7 @@ exports.setLock = (req, res, next) => {
   const set = {
       isLocked: req.body.isLocked,
       lastUpdateAt: new Date(),
-      lastUpdateBy: "prakosd"
+      lastUpdateBy: req.userData.userId
   };
   
   SapCommitment.findByIdAndUpdate(id, set, option)
