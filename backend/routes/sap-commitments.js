@@ -15,6 +15,7 @@ router.put("/setlink/:id", checkAuth, extractFile, SapCommitmentsController.setL
 router.put("/setlock/:id", checkAuth, extractFile, SapCommitmentsController.setLock);
 
 router.delete("/:id", SapCommitmentsController.deleteOne);
+router.delete("", SapCommitmentsController.deleteMany);
 
 // router.post("", checkAuth, extractFile, PostController.createPost);
 

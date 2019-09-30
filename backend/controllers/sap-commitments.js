@@ -1,7 +1,6 @@
 const SapCommitment = require("../models/sap-commitment");
 
 exports.createOne = (req, res, next) => {
-  console.log(req);
   const sapCommitment = new SapCommitment({
     orderNumber: req.body.orderNumber,
     category: req.body.category,
@@ -156,7 +155,15 @@ exports.deleteOne = (req, res, next) => {
 };
 
 exports.deleteMany = (req, res, next) => {
-    
+   const filter = { isLocked: false };
+   SapCommitment.deleteMany(filter).then(result => {
+    res.status(200).json({ message: "Deletion successful!" });
+   }).catch(error => {
+      console.log(error);
+      res.status(500).json({
+          message: "Deleting posts failed!"
+      });
+   });
 };
 
 exports.getMany = (req, res, next) => {
