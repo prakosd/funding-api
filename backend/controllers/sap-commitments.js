@@ -18,6 +18,7 @@ exports.createOne = (req, res, next) => {
     username: req.body.username,
     isLocked: req.body.isLocked,
     isLinked: req.body.isLinked,
+    remark: req.body.remark,
     lastUpdateAt: new Date(),
     lastUpdateBy: req.userData.userId
   });
@@ -39,29 +40,19 @@ exports.createOne = (req, res, next) => {
 };
 
 exports.updateOne = (req, res, next) => {
-  const option = { runValidators: true, context: 'query', useFindAndModify: false };
+  const option = { runValidators: true, context: 'query', useFindAndModify: false, upsert: true };
   const id = req.params.id;
-  const set = {
-      orderNumber: req.body.orderNumber,
-      category: req.body.category,
-      documentNumber: req.body.documentNumber,
-      position: req.body.position,
-      costElement: req.body.costElement,
-      name: req.body.name,
-      quantity: req.body.quantity,
-      uom: req.body.uom,
-      currency: req.body.currency,
-      actualValue: req.body.actualValue,
-      planValue: req.body.planValue,
-      documentDate: req.body.documentDate,
-      debitDate: req.body.debitDate,
-      username: req.body.username,
-      isLocked: req.body.isLocked,
-      isLinked: req.body.isLinked,
-      lastUpdateAt: new Date(),
-      lastUpdateBy: req.userData.userId
-  };
+  const body = JSON.parse(JSON.stringify(req.body));
+  let set = {};
   
+  for (key in body) {
+    if (body.hasOwnProperty(key)) {
+      set[key] = body[key];
+    }
+  }
+  set['lastUpdateAt'] = new Date();
+  set['lastUpdateBy'] = req.userData.userId;
+
   SapCommitment.findByIdAndUpdate(id, set, option)
     .then(result => {
       res.status(200).json({ message: "Update successful!", id: id });
@@ -74,68 +65,40 @@ exports.updateOne = (req, res, next) => {
     .catch(error => {
       console.log(error);
       res.status(500).json({
-        message: "Creating SAP Commitment is failed!",
+        message: "Updating SAP Commitment is failed!",
         error: error,
         id: id
       });
     });
 };
 
-exports.setLink = (req, res, next) => {
-  const option = { runValidators: true, context: 'query', useFindAndModify: false };
+exports.patchOne = (req, res, next) => {
+  const option = { runValidators: true, context: 'query', useFindAndModify: false, upsert: true };
   const id = req.params.id;
-  const set = {
-      isLinked: req.body.isLinked,
-      lastUpdateAt: new Date(),
-      lastUpdateBy: req.userData.userId
-  };
+  const body = JSON.parse(JSON.stringify(req.body));
+  let set = {};
   
-  SapCommitment.findByIdAndUpdate(id, set, option)
-    .then(result => {
-      res.status(200).json({ message: "Update successful!", id: id });
-      // if (result.n > 0) {
-      //   res.status(200).json({ message: "Update successful!", id: id });
-      // } else {
-      //   res.status(401).json({ message: "Not authorized!", id: id });
-      // }
-    })
-    .catch(error => {
-      console.log(error);
-      res.status(500).json({
-        message: "Creating SAP Commitment is failed!",
-        error: error,
-        id: id
-      });
-    });
-};
+  for (key in body) {
+    if (body.hasOwnProperty(key)) {
+      set[key] = body[key];
+    }
+  }
+  set['lastUpdateAt'] = new Date();
+  set['lastUpdateBy'] = req.userData.userId;
 
-exports.setLock = (req, res, next) => {
-  const option = { runValidators: true, context: 'query', useFindAndModify: false };
-  const id = req.params.id;
-  const set = {
-      isLocked: req.body.isLocked,
-      lastUpdateAt: new Date(),
-      lastUpdateBy: req.userData.userId
-  };
-  
   SapCommitment.findByIdAndUpdate(id, set, option)
     .then(result => {
-      res.status(200).json({ message: "Update successful!", id: id });
-      // if (result.n > 0) {
-      //   res.status(200).json({ message: "Update successful!", id: id });
-      // } else {
-      //   res.status(401).json({ message: "Not authorized!", id: id });
-      // }
+      res.status(200).json({ message: "Patch successful!", id: id });
     })
     .catch(error => {
       console.log(error);
       res.status(500).json({
-        message: "Creating SAP Commitment is failed!",
+        message: "Patching SAP Commitment is failed!",
         error: error,
         id: id
       });
     });
-};
+}
 
 exports.deleteOne = (req, res, next) => {
   const id = req.params.id;
@@ -207,8 +170,4 @@ exports.getOne = (req, res, next) => {
             message: "Fetching SAP Commitment failed!"
           });
     });
-};
-
-exports.insertOne = (req, res, next) => {
-  //Upsert one-by-one  
 };
