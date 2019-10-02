@@ -12,8 +12,6 @@ router.post("", checkAuth, extractFile, SapCommitmentsController.createOne);
 
 router.put("/:id", checkAuth, extractFile, SapCommitmentsController.updateOne);
 
-router.patch("/:id", checkAuth, extractFile, SapCommitmentsController.patchOne);
-
 router.delete("/:id", SapCommitmentsController.deleteOne);
 
 router.delete("", SapCommitmentsController.deleteMany);

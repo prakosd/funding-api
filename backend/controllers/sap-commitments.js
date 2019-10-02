@@ -72,34 +72,6 @@ exports.updateOne = (req, res, next) => {
     });
 };
 
-exports.patchOne = (req, res, next) => {
-  const option = { runValidators: true, context: 'query', useFindAndModify: false, upsert: true };
-  const id = req.params.id;
-  const body = JSON.parse(JSON.stringify(req.body));
-  let set = {};
-  
-  for (key in body) {
-    if (body.hasOwnProperty(key)) {
-      set[key] = body[key];
-    }
-  }
-  set['lastUpdateAt'] = new Date();
-  set['lastUpdateBy'] = req.userData.userId;
-
-  SapCommitment.findByIdAndUpdate(id, set, option)
-    .then(result => {
-      res.status(200).json({ message: "Patch successful!", id: id });
-    })
-    .catch(error => {
-      console.log(error);
-      res.status(500).json({
-        message: "Patching SAP Commitment is failed!",
-        error: error,
-        id: id
-      });
-    });
-}
-
 exports.deleteOne = (req, res, next) => {
   const id = req.params.id;
     SapCommitment.findByIdAndDelete(id).then(result => {
