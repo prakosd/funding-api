@@ -95,9 +95,9 @@ exports.updateOne = (req, res, next) => {
     lastUpdateAt: new Date(),
     lastUpdateBy: req.userData.userId
   };
-  SapCommitment.findOneIdAndUpdate(filter, set, option)
+  SapCommitment.findOneAndUpdate(filter, set, option)
     .then(result => {
-      res.status(200).json({ message: "Updating successful!", id: result._id });
+      res.status(200).json({ message: "Updating successful!", data: result });
     })
     .catch(error => {
       console.log(error);
@@ -138,6 +138,7 @@ exports.deleteMany = (req, res, next) => {
 exports.getMany = (req, res, next) => {
   const orderNumber = req.query.ordernumber;
   const fields = req.query.fields;
+  const sorts = req.query.sorts;
   const documentNumber = req.query.documentnumber;
   const position = +req.query.position;
 
@@ -155,8 +156,7 @@ exports.getMany = (req, res, next) => {
     if (orderNumber) {  query = query.where('orderNumber').equals(orderNumber); }
     if (documentNumber) {  query = query.where('documentNumber').equals(documentNumber); }
     if (position) {  query = query.where('position').equals(position); }
-    
-    query = query.sort('orderNumber category documentNumber');
+    if (sorts) { query = query.sort(sorts); }
 
     query.then(sapCommitments => {
       res.status(200).json({
