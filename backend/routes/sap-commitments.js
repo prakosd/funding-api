@@ -10,9 +10,9 @@ router.get("/:id", SapCommitmentsController.getOne);
 
 router.post("", checkAuth, extractFile, SapCommitmentsController.createOne);
 
-router.put("/:id", checkAuth, extractFile, SapCommitmentsController.updateOne);
+router.put("/:id", checkAuth, extractFile, SapCommitmentsController.upsertOne);
 
-router.put("", checkAuth, extractFile, SapCommitmentsController.updateOne);
+router.put("", checkAuth, extractFile, SapCommitmentsController.upsertOne);
 
 router.patch("/:id", checkAuth, extractFile, SapCommitmentsController.patchOne);
 

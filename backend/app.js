@@ -9,8 +9,7 @@ const app = express();
 // mongod --dbpath="D:\Software Development\Funding Tracking System\data"
 // npm run start:server
 mongoose
-  .connect(
-    'mongodb://localhost:27017/funding', { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true }
+  .connect( 'mongodb://localhost:27017/funding', { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true }
     // "mongodb+srv://max:" +
     //   process.env.MONGO_ATLAS_PW +
     //   "@cluster0-ntrwp.mongodb.net/node-angular"
