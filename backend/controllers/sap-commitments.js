@@ -12,7 +12,7 @@ exports.createOne = (req, res, next) => {
   data['lastUpdateAt'] = new Date();
   data['lastUpdateBy'] = req.userData.userId;
 
-  sapCommitment
+  data
     .save()
     .then(result => {
       res.status(201).json({ message: "Creating successful!", data: { _id: result._id }});
@@ -145,7 +145,7 @@ exports.getOne = (req, res, next) => {
   const position = +req.query.position;
 
   let query;
-  if (id) { SapCommitment.findById(id); }
+  if (id) { query = SapCommitment.findById(id); }
   else { 
     query = SapCommitment.findOne();
     if (orderNumber) { query.where('orderNumber').equals(orderNumber); }
