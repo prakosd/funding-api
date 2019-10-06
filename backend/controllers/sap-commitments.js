@@ -91,7 +91,7 @@ exports.deleteOne = (req, res, next) => {
 };
 
 exports.deleteMany = (req, res, next) => {
-   const filter = { isLocked: false };
+   const filter = { $or: [{ isLocked: false }, { isLocked: { $exists: false } } ] };
    SapCommitment.deleteMany(filter).then(result => {
     res.status(200).json({ message: "Deleting many successful!" });
    }).catch(error => {
