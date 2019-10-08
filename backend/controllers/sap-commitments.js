@@ -9,8 +9,8 @@ exports.createOne = (req, res, next) => {
       data[key] = body[key];
     }
   }
-  data['lastUpdateAt'] = new Date();
-  data['lastUpdateBy'] = req.userData.userId;
+  data.lastUpdateAt = new Date();
+  data.lastUpdateBy = req.userData.userId;
 
   data
     .save()
@@ -22,7 +22,6 @@ exports.createOne = (req, res, next) => {
       res.status(500).json({message: "Creating failed!" });
     });
 };
-
 exports.patchOne = (req, res, next) => {
   const option = { runValidators: true, context: 'query', useFindAndModify: false, new: true, upsert: false };
   const id = req.params.id;
@@ -34,8 +33,8 @@ exports.patchOne = (req, res, next) => {
       set[key] = body[key];
     }
   }
-  set['lastUpdateAt'] = new Date();
-  set['lastUpdateBy'] = req.userData.userId;
+  set.lastUpdateAt = new Date();
+  set.lastUpdateBy = req.userData.userId;
 
   SapCommitment.findByIdAndUpdate(id, set, option)
     .then(result => {
