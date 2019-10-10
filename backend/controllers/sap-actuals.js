@@ -1,8 +1,8 @@
-const SapCommitment = require("../models/sap-commitment");
+const SapActual = require("../models/sap-actual");
 
 exports.createOne = (req, res, next) => {
   const body = JSON.parse(JSON.stringify(req.body));
-  let data = new SapCommitment({});
+  let data = new SapActual({});
   
   for (key in body) {
     if (body.hasOwnProperty(key)) {
@@ -37,7 +37,7 @@ exports.patchOne = (req, res, next) => {
   set.lastUpdateAt = new Date();
   set.lastUpdateBy = req.userData.userId;
 
-  SapCommitment.findByIdAndUpdate(id, set, option)
+  SapActual.findByIdAndUpdate(id, set, option)
     .then(result => {
       res.status(200).json({ message: "Patching successful!", data: { _id: result._id } });
     })
@@ -56,7 +56,7 @@ exports.upsertOne = (req, res, next) => {
   else {
     filter = {
       orderNumber: req.body.orderNumber,
-      documentNumber: req.body.documentNumber,
+      referenceNumber: req.body.referenceNumber,
       position: req.body.position,
     };
   }
@@ -70,7 +70,7 @@ exports.upsertOne = (req, res, next) => {
   set['lastUpdateAt'] = new Date();
   set['lastUpdateBy'] = req.userData.userId;
 
-  SapCommitment.findOneAndUpdate(filter, set, option)
+  SapActual.findOneAndUpdate(filter, set, option)
     .then(result => {
       res.status(200).json({ message: "Updating successful!", data: { _id: result._id }});
     })
@@ -82,7 +82,7 @@ exports.upsertOne = (req, res, next) => {
 
 exports.deleteOne = (req, res, next) => {
   const id = req.params.id;
-    SapCommitment.findByIdAndDelete(id).then(result => {
+  SapActual.findByIdAndDelete(id).then(result => {
       res.status(200).json({ message: "Deleting one successful!", data: { _id: id }});
     }).catch(error => {
       console.log(error);
@@ -92,7 +92,7 @@ exports.deleteOne = (req, res, next) => {
 
 exports.deleteMany = (req, res, next) => {
    const filter = { $or: [{ isLocked: false }, { isLocked: { $exists: false } } ] };
-   SapCommitment.deleteMany(filter).then(result => {
+   SapActual.deleteMany(filter).then(result => {
     res.status(200).json({ message: "Deleting many successful!" });
    }).catch(error => {
       console.log(error);
@@ -107,7 +107,7 @@ exports.getMany = (req, res, next) => {
   const sorts = req.query.sorts;
 
   const orderNumber = req.query.ordernumber;
-  const documentNumber = req.query.documentnumber;
+  const referenceNumber = req.query.referenceNumber;
   const position = +req.query.position;
 
   let year = (new Date).getFullYear();
@@ -118,11 +118,11 @@ exports.getMany = (req, res, next) => {
     const endDate = new Date(year+1, 0, 2);
   
     // console.log(startDate, endDate);
-    let query = SapCommitment.find();
+    let query = SapActual.find();
     if (fields) { query.select(fields) }
-    if (year) { query.where('debitDate').gte(startDate).lt(endDate) }
+    if (year) { query.where('postingDate').gte(startDate).lt(endDate) }
     if (orderNumber) {  query.where('orderNumber').equals(orderNumber); }
-    if (documentNumber) {  query.where('documentNumber').equals(documentNumber); }
+    if (referenceNumber) {  query.where('referenceNumber').equals(referenceNumber); }
     if (position) {  query.where('position').equals(position); }
     if (sorts) { query.sort(sorts); }
     if (pageSize && currentPage) { query.skip(pageSize * (currentPage - 1)).limit(pageSize); }
@@ -141,15 +141,15 @@ exports.getOne = (req, res, next) => {
   const sorts = req.query.sorts;
 
   const orderNumber = req.query.ordernumber;
-  const documentNumber = req.query.documentnumber;
+  const referenceNumber = req.query.referenceNumber;
   const position = +req.query.position;
 
   let query;
-  if (id) { query = SapCommitment.findById(id); }
+  if (id) { query = SapActual.findById(id); }
   else { 
-    query = SapCommitment.findOne();
+    query = SapActual.findOne();
     if (orderNumber) { query.where('orderNumber').equals(orderNumber); }
-    if (documentNumber) { query.where('documentNumber').equals(documentNumber); }
+    if (referenceNumber) { query.where('referenceNumber').equals(referenceNumber); }
     if (position) { query.where('position').equals(position); }
   }
   if (fields) { query.select(fields) }

@@ -4,6 +4,8 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 
 const sapCommitmentRoutes = require("./routes/sap-commitments");
+const sapActualRoutes = require("./routes/sap-actuals");
+const sapEasRoutes = require("./routes/sap-eas");
 
 const app = express();
 // mongod --dbpath="D:\Software Development\Funding Tracking System\data"
@@ -40,5 +42,7 @@ app.use((req, res, next) => {
 
 const apiWebPath = "/api/funding/web/";
 app.use(apiWebPath + "sap-commitments", sapCommitmentRoutes);
+app.use(apiWebPath + "sap-actuals", sapActualRoutes);
+app.use(apiWebPath + "sap-eas", sapEasRoutes);
 
 module.exports = app;

@@ -1,8 +1,8 @@
-const SapCommitment = require("../models/sap-commitment");
+const SapEas = require("../models/sap-eas");
 
 exports.createOne = (req, res, next) => {
   const body = JSON.parse(JSON.stringify(req.body));
-  let data = new SapCommitment({});
+  let data = new SapEas({});
   
   for (key in body) {
     if (body.hasOwnProperty(key)) {
@@ -37,7 +37,7 @@ exports.patchOne = (req, res, next) => {
   set.lastUpdateAt = new Date();
   set.lastUpdateBy = req.userData.userId;
 
-  SapCommitment.findByIdAndUpdate(id, set, option)
+  SapEas.findByIdAndUpdate(id, set, option)
     .then(result => {
       res.status(200).json({ message: "Patching successful!", data: { _id: result._id } });
     })
@@ -55,9 +55,7 @@ exports.upsertOne = (req, res, next) => {
   if (id) { filter = { _id: id }; }
   else {
     filter = {
-      orderNumber: req.body.orderNumber,
-      documentNumber: req.body.documentNumber,
-      position: req.body.position,
+      requisitionNumber: req.body.requisitionNumber
     };
   }
   let set = {};
@@ -70,7 +68,7 @@ exports.upsertOne = (req, res, next) => {
   set['lastUpdateAt'] = new Date();
   set['lastUpdateBy'] = req.userData.userId;
 
-  SapCommitment.findOneAndUpdate(filter, set, option)
+  SapEas.findOneAndUpdate(filter, set, option)
     .then(result => {
       res.status(200).json({ message: "Updating successful!", data: { _id: result._id }});
     })
@@ -82,7 +80,7 @@ exports.upsertOne = (req, res, next) => {
 
 exports.deleteOne = (req, res, next) => {
   const id = req.params.id;
-    SapCommitment.findByIdAndDelete(id).then(result => {
+  SapEas.findByIdAndDelete(id).then(result => {
       res.status(200).json({ message: "Deleting one successful!", data: { _id: id }});
     }).catch(error => {
       console.log(error);
@@ -92,7 +90,7 @@ exports.deleteOne = (req, res, next) => {
 
 exports.deleteMany = (req, res, next) => {
    const filter = { $or: [{ isLocked: false }, { isLocked: { $exists: false } } ] };
-   SapCommitment.deleteMany(filter).then(result => {
+   SapEas.deleteMany(filter).then(result => {
     res.status(200).json({ message: "Deleting many successful!" });
    }).catch(error => {
       console.log(error);
@@ -106,9 +104,7 @@ exports.getMany = (req, res, next) => {
   const fields = req.query.fields;
   const sorts = req.query.sorts;
 
-  const orderNumber = req.query.ordernumber;
-  const documentNumber = req.query.documentnumber;
-  const position = +req.query.position;
+  const requisitionNumber = req.query.requisitionNumber;
 
   let year = (new Date).getFullYear();
     if (req.query.year) {
@@ -118,12 +114,10 @@ exports.getMany = (req, res, next) => {
     const endDate = new Date(year+1, 0, 2);
   
     // console.log(startDate, endDate);
-    let query = SapCommitment.find();
+    let query = SapEas.find();
     if (fields) { query.select(fields) }
-    if (year) { query.where('debitDate').gte(startDate).lt(endDate) }
-    if (orderNumber) {  query.where('orderNumber').equals(orderNumber); }
-    if (documentNumber) {  query.where('documentNumber').equals(documentNumber); }
-    if (position) {  query.where('position').equals(position); }
+    if (year) { query.where('etaRequest').gte(startDate).lt(endDate) }
+    if (requisitionNumber) {  query.where('requisitionNumber').equals(requisitionNumber); }
     if (sorts) { query.sort(sorts); }
     if (pageSize && currentPage) { query.skip(pageSize * (currentPage - 1)).limit(pageSize); }
 
@@ -140,17 +134,13 @@ exports.getOne = (req, res, next) => {
   const fields = req.query.fields;
   const sorts = req.query.sorts;
 
-  const orderNumber = req.query.ordernumber;
-  const documentNumber = req.query.documentnumber;
-  const position = +req.query.position;
+  const requisitionNumber = req.query.requisitionNumber;
 
   let query;
-  if (id) { query = SapCommitment.findById(id); }
+  if (id) { query = SapEas.findById(id); }
   else { 
-    query = SapCommitment.findOne();
-    if (orderNumber) { query.where('orderNumber').equals(orderNumber); }
-    if (documentNumber) { query.where('documentNumber').equals(documentNumber); }
-    if (position) { query.where('position').equals(position); }
+    query = SapEas.findOne();
+    if (requisitionNumber) { query.where('requisitionNumber').equals(requisitionNumber); }
   }
   if (fields) { query.select(fields) }
   if (sorts) { query.sort(sorts); }
