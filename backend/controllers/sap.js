@@ -1,6 +1,13 @@
+const SapCommitment = require("../models/sap-commitment");
+
 exports.getMany = (req, res, next) => {
     const result = getOrderNumbers(2019);
-    res.status(200).json({ message: "Fetching many successfully!", data: result });
+    if (result) {
+      res.status(200).json({ message: "Fetching many successfully!", data: result });
+    } else {
+      res.status(500).json({ message: "Fetching many failed!" });
+    }
+    
   };
 
   exports.getOne = (req, res, next) => {
@@ -9,24 +16,36 @@ exports.getMany = (req, res, next) => {
   };
 
 getOrderNumbers = (fiscalYears) => {
-  const result = [{
-        orderNumber: 'CGMM2019V167',
-        name: 'Start of Production V167',
-        sumPr: 3000000,
-        sumPo: 4000000,
-        sumActual: 467499938949,
-        transactions: getTransactions('CGMM2019V167')
-      },
-      {
-        orderNumber: 'CGMM2019X167',
-        name: 'Start of Production X167',
-        sumPr: 787888,
-        sumPo: 9855445,
-        sumActual: 467499938949,
-        transactions: getTransactions('CGMM2019V167')
-      }
-    ];
+  const aggregate = SapCommitment.aggregate();
+  aggregate.group({ 
+    _id: null,
+    orderNumber: { $first: '$orderNumber' } });
+  aggregate.then(result => {
+    console.log(result);
     return result;
+
+  }).catch(error => {
+    console.log(error);
+    return;
+  });
+  // const result = [{
+  //       orderNumber: 'CGMM2019V167',
+  //       name: 'Start of Production V167',
+  //       sumPr: 3000000,
+  //       sumPo: 4000000,
+  //       sumActual: 467499938949,
+  //       transactions: getTransactions('CGMM2019V167')
+  //     },
+  //     {
+  //       orderNumber: 'CGMM2019X167',
+  //       name: 'Start of Production X167',
+  //       sumPr: 787888,
+  //       sumPo: 9855445,
+  //       sumActual: 467499938949,
+  //       transactions: getTransactions('CGMM2019V167')
+  //     }
+  //   ];
+  //   return result;
 }
 
 getTransactions = (orderNumber) => {
