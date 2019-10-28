@@ -1,8 +1,7 @@
 const express = require("express");
-const SapController = require("../controllers/sap");
-// const extractFile = require("../middleware/file");
-// const checkAuth = require("../middleware/check-auth");
+const SapEasController = require("../controllers/sap");
 const router = express.Router();
 
-router.get("", SapController.getMany);
+router.get("", SapEasController.getMany);
+
 module.exports = router;
