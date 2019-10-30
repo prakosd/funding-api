@@ -18,6 +18,7 @@ const sapCommitmentSchema = mongoose.Schema({
     username: { type: String, required: true },
     isLocked: { type: Boolean, required: true, default: false },
     isLinked: { type: Boolean, required: true, default: true },
+    isImported: { type: Boolean, required: true, default: true },
     remark: { type: String },
     lastUpdateAt: { type: Date, required: true },
     lastUpdateBy: { type: String, required: true }

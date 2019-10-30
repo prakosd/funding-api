@@ -114,8 +114,8 @@ exports.getMany = (req, res, next) => {
   if (req.query.year) {
     year = +req.query.year;
   }
-  const startDate = new Date(year, 0, 2);
-  const endDate = new Date(year+1, 0, 2);
+  const startDate = new Date(year, 0, 1).toLocaleString();
+  const endDate = new Date(year+1, 0, 1).toLocaleString();
 
   // console.log(startDate, endDate);
   let query = SapCommitment.find();

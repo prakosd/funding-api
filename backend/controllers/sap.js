@@ -15,19 +15,29 @@ exports.getMany = (req, res, next) => {
     res.status(200).json({ message: "Fetching one successfully!", data: result });
   };
 
-getOrderNumbers = (fiscalYears) => {
+getOrderNumbers = (year) => {
+  const startDate = new Date(year, 0, 1).toLocaleString();
+  const endDate = new Date(year+1, 0, 1).toLocaleString();
+
   const aggregate = SapCommitment.aggregate();
+  aggregate.match({  isLinked: true });
   aggregate.group({ 
-    _id: null,
-    orderNumber: { $first: '$orderNumber' } });
+    _id: {
+      orderNumber: '$orderNumber',
+      category: '$category'
+     },
+     totalActual: { $sum: '$actualValue' },
+     totalPlan: { $sum: '$planValue' }
+  });
+
   aggregate.then(result => {
     console.log(result);
     return result;
-
   }).catch(error => {
     console.log(error);
     return;
   });
+  
   // const result = [{
   //       orderNumber: 'CGMM2019V167',
   //       name: 'Start of Production V167',

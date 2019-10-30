@@ -16,6 +16,7 @@ const sapEasSchema = mongoose.Schema({
     etaRequest: { type: Date, required: true },
     isLocked: { type: Boolean, required: true, default: false },
     isLinked: { type: Boolean, required: true, default: true },
+    isImported: { type: Boolean, required: true, default: false },
     remark: { type: String },
     lastUpdateAt: { type: Date, required: true },
     lastUpdateBy: { type: String, required: true }
