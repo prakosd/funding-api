@@ -1,7 +1,7 @@
 const express = require("express");
-const SapEasController = require("../controllers/sap");
+const SapController = require("../controllers/sap");
 const router = express.Router();
 
-router.get("", SapEasController.getMany);
+router.get("", SapController.getMany);
 
 module.exports = router;

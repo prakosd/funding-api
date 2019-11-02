@@ -1,61 +1,96 @@
 const SapCommitment = require("../models/sap-commitment");
+const SapActual = require("../models/sap-actual");
 
 exports.getMany = (req, res, next) => {
-    const result = getOrderNumbers(2019);
-    if (result) {
-      res.status(200).json({ message: "Fetching many successfully!", data: result });
-    } else {
+  let year = (new Date).getFullYear();
+  if (req.query.year) {
+    year = +req.query.year;
+  }
+
+  let sapCommitments;
+  let sapActuals;
+  getSapCommitments(year).then(result => {
+    sapCommitments = result;
+    let finalResult = [];
+    getSapActuals(year).then(result => {
+      sapActuals = result;
+      const sap = [...sapCommitments, ...sapActuals].map(row => {
+        return {
+          orderNumber: row._id.orderNumber,
+          category: row._id.category,
+          totalActual: row.totalActual,
+          totalPlan: row.totalPlan
+        };
+      });
+      
+      // .forEach((row, index, array) => {
+      //  finalResult.push(row);
+        // if(!finalResult) {
+        //   finalResult.push(row);
+        // } else {
+        //   let find = finalResult.filter(d => d.orderNumber === row.orderNumber && d.category === row.category)
+        //   if(find) {
+        //     find.totalActual += row.totalActual;
+        //     find.totalPlan += row.totalPlan;
+        //   } else {
+        //     finalResult.push(row);
+        //   }
+        // }
+      res.status(200).json({ message: "Fetching many successfully!", data: sap });
+    }).catch(error => {
+      console.log(error);
       res.status(500).json({ message: "Fetching many failed!" });
-    }
-    
-  };
+    });
+  }).catch(error => {
+    console.log(error);
+    res.status(500).json({ message: "Fetching many failed!" });
+  });    
+};
 
-  exports.getOne = (req, res, next) => {
-    const result = getTransactions('CGMM2019V167');
-    res.status(200).json({ message: "Fetching one successfully!", data: result });
-  };
-
-getOrderNumbers = (year) => {
-  const startDate = new Date(year, 0, 1).toLocaleString();
-  const endDate = new Date(year+1, 0, 1).toLocaleString();
+getSapCommitments = (year) => {
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year+1, 0, 1);
 
   const aggregate = SapCommitment.aggregate();
-  aggregate.match({  isLinked: true });
+  aggregate.match({
+    $and: [
+      { isLinked: true },
+      { debitDate: { $gte: startDate, $lt: endDate } }
+    ] 
+  }); 
   aggregate.group({ 
     _id: {
       orderNumber: '$orderNumber',
-      category: '$category'
+      category: '$category',
      },
      totalActual: { $sum: '$actualValue' },
      totalPlan: { $sum: '$planValue' }
   });
 
-  aggregate.then(result => {
-    console.log(result);
-    return result;
-  }).catch(error => {
-    console.log(error);
-    return;
+  return aggregate;
+}
+
+getSapActuals = (year) => {
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year+1, 0, 1);
+
+  const aggregate = SapActual.aggregate();
+  aggregate.match({
+    $and: [
+      { isLinked: true },
+      { postingDate: { $gte: startDate, $lt: endDate } }
+    ] 
+  }); 
+  aggregate.group({ 
+    _id: {
+      orderNumber: '$orderNumber',
+      category: 'PInv',
+     },
+     totalActual: { $sum: '$actualValue' },
+     totalPlan: { $sum: 0 }
   });
-  
-  // const result = [{
-  //       orderNumber: 'CGMM2019V167',
-  //       name: 'Start of Production V167',
-  //       sumPr: 3000000,
-  //       sumPo: 4000000,
-  //       sumActual: 467499938949,
-  //       transactions: getTransactions('CGMM2019V167')
-  //     },
-  //     {
-  //       orderNumber: 'CGMM2019X167',
-  //       name: 'Start of Production X167',
-  //       sumPr: 787888,
-  //       sumPo: 9855445,
-  //       sumActual: 467499938949,
-  //       transactions: getTransactions('CGMM2019V167')
-  //     }
-  //   ];
-  //   return result;
+
+  return aggregate;
 }
 
 getTransactions = (orderNumber) => {

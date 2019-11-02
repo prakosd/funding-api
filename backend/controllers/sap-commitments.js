@@ -24,7 +24,7 @@ exports.createOne = (req, res, next) => {
 };
 
 exports.patchOne = (req, res, next) => {
-  const option = { runValidators: true, context: 'query', useFindAndModify: false, new: true, upsert: false };
+  const option = { runValidators: true, context: 'query', useFindAndModify: false, new: true, upsert: false, setDefaultsOnInsert: true };
   const id = req.params.id;
   const body = JSON.parse(JSON.stringify(req.body));
   let set = {};
@@ -48,7 +48,7 @@ exports.patchOne = (req, res, next) => {
 };
 
 exports.upsertOne = (req, res, next) => {
-  const option = { runValidators: true, context: 'query', useFindAndModify: false, new: true, upsert: true };
+  const option = { runValidators: true, context: 'query', useFindAndModify: false, new: true, upsert: true, setDefaultsOnInsert: true };
   const body = JSON.parse(JSON.stringify(req.body));
   const id = req.params.id;
   let filter;
@@ -93,7 +93,7 @@ exports.deleteOne = (req, res, next) => {
 exports.deleteMany = (req, res, next) => {
    const filter = { $and:[
                     { $or: [ { isLocked: false }, { isLocked: { $exists: false } } ] },
-                    { isImported: true }
+                    { $or:[ { isImported: true }, { isImported: { $exists: false }}] }
                   ]};
 
    SapCommitment.deleteMany(filter).then(result => {
@@ -118,8 +118,8 @@ exports.getMany = (req, res, next) => {
   if (req.query.year) {
     year = +req.query.year;
   }
-  const startDate = new Date(year, 0, 1).toLocaleString();
-  const endDate = new Date(year+1, 0, 1).toLocaleString();
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year+1, 0, 1);
 
   // console.log(startDate, endDate);
   let query = SapCommitment.find();

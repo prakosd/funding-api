@@ -24,7 +24,7 @@ exports.createOne = (req, res, next) => {
 };
 
 exports.patchOne = (req, res, next) => {
-  const option = { runValidators: true, context: 'query', useFindAndModify: false, new: true, upsert: false };
+  const option = { runValidators: true, context: 'query', useFindAndModify: false, new: true, upsert: false, setDefaultsOnInsert: true };
   const id = req.params.id;
   const body = JSON.parse(JSON.stringify(req.body));
   let set = {};
@@ -48,7 +48,7 @@ exports.patchOne = (req, res, next) => {
 };
 
 exports.upsertOne = (req, res, next) => {
-  const option = { runValidators: true, context: 'query', useFindAndModify: false, new: true, upsert: true };
+  const option = { runValidators: true, context: 'query', useFindAndModify: false, new: true, upsert: true, setDefaultsOnInsert: true };
   const body = JSON.parse(JSON.stringify(req.body));
   const id = req.params.id;
   let filter;
@@ -91,7 +91,11 @@ exports.deleteOne = (req, res, next) => {
 };
 
 exports.deleteMany = (req, res, next) => {
-   const filter = { $or: [{ isLocked: false }, { isLocked: { $exists: false } } ] };
+  const filter = { $and:[
+    { $or: [ { isLocked: false }, { isLocked: { $exists: false } } ] },
+    { $or:[ { isImported: true }, { isImported: { $exists: false }}] }
+  ]};
+
    SapActual.deleteMany(filter).then(result => {
     res.status(200).json({ message: "Deleting many successful!" });
    }).catch(error => {
@@ -114,8 +118,8 @@ exports.getMany = (req, res, next) => {
   if (req.query.year) {
     year = +req.query.year;
   }
-  const startDate = new Date(year, 0, 1).toLocaleString();
-  const endDate = new Date(year+1, 0, 1).toLocaleString();
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year+1, 0, 1);
 
   // console.log(startDate, endDate);
   let query = SapActual.find();
