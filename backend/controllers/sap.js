@@ -36,6 +36,34 @@ exports.getMany = (req, res, next) => {
         //     finalResult.push(row);
         //   }
         // }
+
+      //   const data = [{
+      //     name: 'John',
+      //     email: 'user@mail.com',
+      //     city: 'London',
+      //     type: 'CLIENT'
+      //   },
+      //   {
+      //     name: 'Steve',
+      //     email: 'stave@mail.com',
+      //     city: 'Rome',
+      //     type: 'USER'
+      //   },
+      //   {
+      //     name: 'Mark',
+      //     email: 'mark@mail.com',
+      //     city: 'Paris',
+      //     type: 'ADMIN'
+      //   }
+      // ];
+      
+      // const result = data.reduce((acc, { type, ...obj }) => {
+      //   acc[type] = obj;
+      //   return acc;
+      // }, {})
+      
+      // console.log(result);
+
       res.status(200).json({ message: "Fetching many successfully!", data: sap });
     }).catch(error => {
       console.log(error);
