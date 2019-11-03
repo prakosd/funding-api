@@ -1,6 +1,7 @@
 const ash = require('express-async-handler')
 const SapCommitment = require("../models/sap-commitment");
 const SapActual = require("../models/sap-actual");
+const SapEas = require("../models/sap-eas");
 
 exports.getMany = ash(async (req, res, next) => {
   let year = (new Date).getFullYear();
@@ -10,7 +11,7 @@ exports.getMany = ash(async (req, res, next) => {
 
   const sapCommitments = await getSapCommitments(year);
   const sapActuals = await getSapActuals(year);
-  const sap = [...sapCommitments, ...sapActuals].map(row => {
+  const promises = [...sapCommitments, ...sapActuals].map(row => {
     return {
       year: row.year,
       orderNumber: row._id.orderNumber,
@@ -45,17 +46,18 @@ exports.getMany = ash(async (req, res, next) => {
       acc[findIndex] = newValue;
     }
     return acc;
-  }, []).map(row => {
-    return {
-      ...row,
-      transactions: []
-    }
-  });
-  res.status(200).json({ message: "Fetching many successfully!", data: sap });
+  }, []).map(ash(async (row) => {
+      return {
+        ...row,
+        transactions: await getTransactions(row.orderNumber)
+      };
+  }));
+  Promise.all(promises).then(result => {
+    res.status(200).json({ message: "Fetching many successfully!", data: result });
+  })
+  
 });
  
-
-     
 
 getSapCommitments = (year) => {
   const startDate = new Date(year, 0, 1);
@@ -103,41 +105,54 @@ getSapActuals = (year) => {
   });
 
   return aggregate;
-}
+};
 
 getTransactions = (orderNumber) => {
-  const result = [
-    {
-      pr: '210002125',
-      po: '450002154',
-      gr: '111215422',
-      namePr: 'Shower Test',
-      nameEas: 'Shower Test',
-      prValue: 0,
-      poValue: 0,
-      grValue: 0,
-      issuer: 'Yulia Marhawati',
-      issueDate: '2019-1-19',
-      etaDate: '2019-2-19',
-      grDate: '2019-2-19'
-    },
-    {
-      pr: '210007875',
-      po: '450988154',
-      gr: '111225422',
-      namePr: 'Engraving Machine',
-      nameEas: 'Engraving Engraving',
-      prValue: 0,
-      poValue: 0,
-      grValue: 0,
-      issuer: 'Yulia Marhawati',
-      issueDate: '2019-1-19',
-      etaDate: '2019-2-19',
-      grDate: '2019-2-19'
-    }
-  ];
+    return getPrList(orderNumber);
+};
 
-  return result;
+getPrList = ash(async (orderNumber) => {
+  const aggregate = SapCommitment.aggregate();
+  aggregate.match({
+    $and: [
+      { isLinked: true },
+      { orderNumber: orderNumber },
+      { category: 'PReq' }
+    ] 
+  }); 
+  aggregate.group({ 
+    _id: {
+      orderNumber: '$orderNumber',
+      documentNumber: '$documentNumber'
+     },
+     name: { $first: '$name' },
+     totalActual: { $sum: '$actualValue' },
+     totalPlan: { $sum: '$planValue' }
+  });
+
+  const result = await aggregate;
+  const promises = result.map(ash(async (row) => {
+    const eas = await getEasDetail(row._id.documentNumber);
+    
+    return {
+      orderNumber: row._id.orderNumber,
+      documentNumber: row._id.documentNumber,
+      name: row.name,
+      eas : eas,
+      totalActual: row.totalActual,
+      totalPlan: row.totalPlan
+    };
+  }));
+
+  return Promise.all(promises);
+});
+
+getEasDetail = (requisitionNumber) => {
+  const query = SapEas.findOne()
+    .where('requisitionNumber').equals(requisitionNumber)
+    .select('requisitionNumber subject requestor recipient creationDate etaRequest');
+
+  return query;
 };
 
 
