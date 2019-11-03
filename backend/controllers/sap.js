@@ -1,79 +1,61 @@
+const ash = require('express-async-handler')
 const SapCommitment = require("../models/sap-commitment");
 const SapActual = require("../models/sap-actual");
 
-exports.getMany = (req, res, next) => {
+exports.getMany = ash(async (req, res, next) => {
   let year = (new Date).getFullYear();
   if (req.query.year) {
     year = +req.query.year;
   }
 
-  let sapCommitments;
-  let sapActuals;
-  getSapCommitments(year).then(result => {
-    sapCommitments = result;
-    let finalResult = [];
-    getSapActuals(year).then(result => {
-      sapActuals = result;
-      const sap = [...sapCommitments, ...sapActuals].map(row => {
-        return {
-          orderNumber: row._id.orderNumber,
-          category: row._id.category,
-          totalActual: row.totalActual,
-          totalPlan: row.totalPlan
-        };
-      });
-      
-      // .forEach((row, index, array) => {
-      //  finalResult.push(row);
-        // if(!finalResult) {
-        //   finalResult.push(row);
-        // } else {
-        //   let find = finalResult.filter(d => d.orderNumber === row.orderNumber && d.category === row.category)
-        //   if(find) {
-        //     find.totalActual += row.totalActual;
-        //     find.totalPlan += row.totalPlan;
-        //   } else {
-        //     finalResult.push(row);
-        //   }
-        // }
+  const sapCommitments = await getSapCommitments(year);
+  const sapActuals = await getSapActuals(year);
+  const sap = [...sapCommitments, ...sapActuals].map(row => {
+    return {
+      year: row.year,
+      orderNumber: row._id.orderNumber,
+      category: row._id.category,
+      totalActual: row.totalActual,
+      totalPlan: row.totalPlan
+    };
+  }).reduce((acc, row) => {
+    const findIndex = acc.findIndex(d => d.orderNumber === row.orderNumber);
+    if(findIndex < 0) {
+      const newValue = {
+        year: row.year,
+        orderNumber: row.orderNumber,
+        totalPrActual: row.category === 'PReq' ? row.totalActual : 0,
+        totalPrPlan: row.category === 'PReq' ? row.totalPlan : 0,
+        totalPoActual: row.category === 'POrd' ? row.totalActual : 0,
+        totalPoPlan: row.category === 'POrd' ? row.totalPlan : 0,
+        totalActual: row.category === 'PInv' ? row.totalActual : 0
+      };
+      acc.push(newValue);
+    } else {
+      oldValue = acc[findIndex];
+      const newValue = {
+        year: oldValue.year,
+        orderNumber: oldValue.orderNumber,
+        totalPrActual: oldValue.totalPrActual + (row.category === 'PReq' ? row.totalActual : 0),
+        totalPrPlan: oldValue.totalPrPlan + (row.category === 'PReq' ? row.totalPlan : 0),
+        totalPoActual:  oldValue.totalPoActual + (row.category === 'POrd' ? row.totalActual : 0),
+        totalPoPlan:  oldValue.totalPoPlan + (row.category === 'POrd' ? row.totalPlan : 0),
+        totalActual:  oldValue.totalActual + (row.category === 'PInv' ? row.totalActual : 0)
+      };
+      acc[findIndex] = newValue;
+    }
+    return acc;
+  }, []).map(row => {
+    return {
+      ...row,
+      transactions: []
+    }
+  });
+  res.status(200).json({ message: "Fetching many successfully!", data: sap });
+});
+ 
 
-      //   const data = [{
-      //     name: 'John',
-      //     email: 'user@mail.com',
-      //     city: 'London',
-      //     type: 'CLIENT'
-      //   },
-      //   {
-      //     name: 'Steve',
-      //     email: 'stave@mail.com',
-      //     city: 'Rome',
-      //     type: 'USER'
-      //   },
-      //   {
-      //     name: 'Mark',
-      //     email: 'mark@mail.com',
-      //     city: 'Paris',
-      //     type: 'ADMIN'
-      //   }
-      // ];
-      
-      // const result = data.reduce((acc, { type, ...obj }) => {
-      //   acc[type] = obj;
-      //   return acc;
-      // }, {})
-      
-      // console.log(result);
-
-      res.status(200).json({ message: "Fetching many successfully!", data: sap });
-    }).catch(error => {
-      console.log(error);
-      res.status(500).json({ message: "Fetching many failed!" });
-    });
-  }).catch(error => {
-    console.log(error);
-    res.status(500).json({ message: "Fetching many failed!" });
-  });    
-};
+     
 
 getSapCommitments = (year) => {
   const startDate = new Date(year, 0, 1);
@@ -91,6 +73,7 @@ getSapCommitments = (year) => {
       orderNumber: '$orderNumber',
       category: '$category',
      },
+     year: { $first: year },
      totalActual: { $sum: '$actualValue' },
      totalPlan: { $sum: '$planValue' }
   });
@@ -114,6 +97,7 @@ getSapActuals = (year) => {
       orderNumber: '$orderNumber',
       category: 'PInv',
      },
+     year: { $first: year },
      totalActual: { $sum: '$actualValue' },
      totalPlan: { $sum: 0 }
   });
