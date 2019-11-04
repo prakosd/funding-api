@@ -171,3 +171,25 @@ exports.getOne = (req, res, next) => {
       res.status(500).json({ message: "Fetching one successfully!" });
   });
 };
+
+exports.getSapActualTotal = (year) => {
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year+1, 0, 1);
+  const aggregate = SapActual.aggregate();
+  aggregate.match({
+    $and: [
+      { isLinked: true },
+      { postingDate: { $gte: startDate, $lt: endDate } }
+    ] 
+  }); 
+  aggregate.group({ 
+    _id: {
+      orderNumber: '$orderNumber',
+      category: 'PInv',
+     },
+     year: { $first: year },
+     totalActual: { $sum: '$actualValue' },
+     totalPlan: { $sum: 0 }
+  });
+  return aggregate;
+};

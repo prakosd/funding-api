@@ -161,3 +161,11 @@ exports.getOne = (req, res, next) => {
       res.status(500).json({ message: "Fetching one successfully!" });
   });
 };
+
+exports.getEasDetail = (requisitionNumber) => {
+  const query = SapEas.findOne()
+    .where('requisitionNumber').equals(requisitionNumber)
+    .select('requisitionNumber subject requestor recipient creationDate etaRequest');
+
+  return query;
+};

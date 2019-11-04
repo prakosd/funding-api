@@ -1,7 +1,7 @@
 const ash = require('express-async-handler')
-const SapCommitment = require("../models/sap-commitment");
-const SapActual = require("../models/sap-actual");
-const SapEas = require("../models/sap-eas");
+const SapCommitmentController = require("../controllers/sap-commitments");
+const SapActualController = require("../controllers/sap-actuals");
+
 
 exports.getMany = ash(async (req, res, next) => {
   let year = (new Date).getFullYear();
@@ -9,9 +9,9 @@ exports.getMany = ash(async (req, res, next) => {
     year = +req.query.year;
   }
 
-  const sapCommitments = await getSapCommitments(year);
-  const sapActuals = await getSapActuals(year);
-  const promises = [...sapCommitments, ...sapActuals].map(row => {
+  const sapCommitmentTotal = await SapCommitmentController.getSapCommitmentTotal(year);
+  const sapActualTotal = await SapActualController.getSapActualTotal(year);
+  const promises = [...sapCommitmentTotal, ...sapActualTotal].map(row => {
     return {
       year: row.year,
       orderNumber: row._id.orderNumber,
@@ -57,134 +57,14 @@ exports.getMany = ash(async (req, res, next) => {
   })
   
 });
- 
 
-getSapCommitments = (year) => {
-  const startDate = new Date(year, 0, 1);
-  const endDate = new Date(year+1, 0, 1);
 
-  const aggregate = SapCommitment.aggregate();
-  aggregate.match({
-    $and: [
-      { isLinked: true },
-      { debitDate: { $gte: startDate, $lt: endDate } }
-    ] 
-  }); 
-  aggregate.group({ 
-    _id: {
-      orderNumber: '$orderNumber',
-      category: '$category',
-     },
-     year: { $first: year },
-     totalActual: { $sum: '$actualValue' },
-     totalPlan: { $sum: '$planValue' }
-  });
-
-  return aggregate;
-}
-
-getSapActuals = (year) => {
-  const startDate = new Date(year, 0, 1);
-  const endDate = new Date(year+1, 0, 1);
-
-  const aggregate = SapActual.aggregate();
-  aggregate.match({
-    $and: [
-      { isLinked: true },
-      { postingDate: { $gte: startDate, $lt: endDate } }
-    ] 
-  }); 
-  aggregate.group({ 
-    _id: {
-      orderNumber: '$orderNumber',
-      category: 'PInv',
-     },
-     year: { $first: year },
-     totalActual: { $sum: '$actualValue' },
-     totalPlan: { $sum: 0 }
-  });
-
-  return aggregate;
-};
-
-getTransactions = (orderNumber) => {
-    return getPrList(orderNumber);
-};
-
-getPrList = ash(async (orderNumber) => {
-  const aggregate = SapCommitment.aggregate();
-  aggregate.match({
-    $and: [
-      { isLinked: true },
-      { orderNumber: orderNumber },
-      { category: 'PReq' }
-    ] 
-  }); 
-  aggregate.group({ 
-    _id: {
-      orderNumber: '$orderNumber',
-      documentNumber: '$documentNumber'
-     },
-     name: { $first: '$name' },
-     totalActual: { $sum: '$actualValue' },
-     totalPlan: { $sum: '$planValue' }
-  });
-
-  const result = await aggregate;
-  const promises = result.map(ash(async (row) => {
-    const eas = await getEasDetail(row._id.documentNumber);
-    
-    return {
-      orderNumber: row._id.orderNumber,
-      documentNumber: row._id.documentNumber,
-      name: row.name,
-      eas : eas,
-      totalActual: row.totalActual,
-      totalPlan: row.totalPlan
+getTransactions = ash(async (orderNumber) => {
+    const result = {
+      prList: await SapCommitmentController.getPrList(orderNumber),
+      poList: await SapCommitmentController.getPoList(orderNumber),
+      grList: null
     };
-  }));
-
-  return Promise.all(promises);
+    return result;
 });
 
-getEasDetail = (requisitionNumber) => {
-  const query = SapEas.findOne()
-    .where('requisitionNumber').equals(requisitionNumber)
-    .select('requisitionNumber subject requestor recipient creationDate etaRequest');
-
-  return query;
-};
-
-
-
-
-//   exports.getMany = (req, res, next) => {
-//     const pageSize = +req.query.pagesize;
-//     const currentPage = +req.query.page;
-//     const fields = req.query.fields;
-//     const sorts = req.query.sorts;
-  
-//     const requisitionNumber = req.query.requisitionNumber;
-  
-//     let year = (new Date).getFullYear();
-//     if (req.query.year) {
-//       year = +req.query.year;
-//     }
-//     const startDate = new Date(year, 0, 2);
-//     const endDate = new Date(year+1, 0, 2);
-  
-//     // console.log(startDate, endDate);
-//     let query = SapEas.find();
-//     if (fields) { query.select(fields) }
-//     if (year) { query.where('etaRequest').gte(startDate).lt(endDate) }
-//     if (requisitionNumber) {  query.where('requisitionNumber').equals(requisitionNumber); }
-//     if (sorts) { query.sort(sorts); }
-//     if (pageSize && currentPage) { query.skip(pageSize * (currentPage - 1)).limit(pageSize); }
-  
-//     query.then(result => {
-//       res.status(200).json({ message: "Fetching many successfully!", data: result });
-//     }).catch(error => {
-//       console.log(error);
-//       res.status(500).json({ message: "Fetching many failed!" });
-//     });    
-//   };

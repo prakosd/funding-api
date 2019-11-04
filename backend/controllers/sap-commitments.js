@@ -1,3 +1,5 @@
+const ash = require('express-async-handler')
+const SapEasController = require("../controllers/sap-eas");
 const SapCommitment = require("../models/sap-commitment");
 
 exports.createOne = (req, res, next) => {
@@ -171,3 +173,96 @@ exports.getOne = (req, res, next) => {
       res.status(500).json({ message: "Fetching one successfully!" });
   });
 };
+
+exports.getSapCommitmentTotal = (year) => {
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year+1, 0, 1);
+  const aggregate = SapCommitment.aggregate();
+  aggregate.match({
+    $and: [
+      { isLinked: true },
+      { debitDate: { $gte: startDate, $lt: endDate } }
+    ] 
+  }); 
+  aggregate.group({ 
+    _id: {
+      orderNumber: '$orderNumber',
+      category: '$category',
+     },
+     year: { $first: year },
+     totalActual: { $sum: '$actualValue' },
+     totalPlan: { $sum: '$planValue' }
+  });
+  return aggregate;
+};
+
+exports.getPrList = ash(async (orderNumber) => {
+  const aggregate = SapCommitment.aggregate();
+  aggregate.match({
+    $and: [
+      { isLinked: true },
+      { orderNumber: orderNumber },
+      { category: 'PReq' }
+    ] 
+  }); 
+  aggregate.group({ 
+    _id: {
+      orderNumber: '$orderNumber',
+      documentNumber: '$documentNumber'
+     },
+     name: { $first: '$name' },
+     totalActual: { $sum: '$actualValue' },
+     totalPlan: { $sum: '$planValue' }
+  });
+
+  const result = await aggregate;
+  const promises = result.map(ash(async (row) => {
+    const eas = await SapEasController.getEasDetail(row._id.documentNumber);
+    
+    return {
+      orderNumber: row._id.orderNumber,
+      documentNumber: row._id.documentNumber,
+      name: row.name,
+      totalActual: row.totalActual,
+      totalPlan: row.totalPlan,
+      eas : eas
+    };
+  }));
+
+  return Promise.all(promises);
+});
+
+exports.getPoList = ash(async (orderNumber) => {
+  const aggregate = SapCommitment.aggregate();
+  aggregate.match({
+    $and: [
+      { isLinked: true },
+      { orderNumber: orderNumber },
+      { category: 'POrd' }
+    ] 
+  }); 
+  aggregate.group({ 
+    _id: {
+      orderNumber: '$orderNumber',
+      documentNumber: '$documentNumber'
+     },
+     name: { $first: '$name' },
+     totalActual: { $sum: '$actualValue' },
+     totalPlan: { $sum: '$planValue' }
+  });
+
+  const result = await aggregate;
+  const promises = result.map(ash(async (row) => {   
+    return {
+      orderNumber: row._id.orderNumber,
+      documentNumber: row._id.documentNumber,
+      name: row.name,
+      totalActual: row.totalActual,
+      totalPlan: row.totalPlan,
+      eas : null,
+      prNo: null
+    };
+  }));
+
+  return Promise.all(promises);
+});
