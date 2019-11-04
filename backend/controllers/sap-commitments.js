@@ -1,6 +1,7 @@
 const ash = require('express-async-handler')
 const SapEasController = require("../controllers/sap-eas");
 const SapCommitment = require("../models/sap-commitment");
+const SapPrToPo = require("../models/sap-pr-to-po");
 
 exports.createOne = (req, res, next) => {
   const body = JSON.parse(JSON.stringify(req.body));
@@ -212,7 +213,9 @@ exports.getPrList = ash(async (orderNumber) => {
      },
      name: { $first: '$name' },
      totalActual: { $sum: '$actualValue' },
-     totalPlan: { $sum: '$planValue' }
+     totalPlan: { $sum: '$planValue' },
+     issueDate: { $max: '$documentDate' },
+     etaDate: { $max: '$debitDate' }
   });
 
   const result = await aggregate;
@@ -222,10 +225,12 @@ exports.getPrList = ash(async (orderNumber) => {
     return {
       orderNumber: row._id.orderNumber,
       documentNumber: row._id.documentNumber,
+      eas : eas,
       name: row.name,
       totalActual: row.totalActual,
       totalPlan: row.totalPlan,
-      eas : eas
+      issueDate: row.issueDate,
+      etaDate: row.etaDate      
     };
   }));
 
@@ -248,21 +253,32 @@ exports.getPoList = ash(async (orderNumber) => {
      },
      name: { $first: '$name' },
      totalActual: { $sum: '$actualValue' },
-     totalPlan: { $sum: '$planValue' }
+     totalPlan: { $sum: '$planValue' },
+     issueDate: { $max: '$documentDate' },
+     etaDate: { $max: '$debitDate' }
   });
 
   const result = await aggregate;
-  const promises = result.map(ash(async (row) => {   
+  const promises = result.map(ash(async (row) => {
+    const pr = await getPrNumber(row._id.orderNumber, row._id.documentNumber);
     return {
       orderNumber: row._id.orderNumber,
       documentNumber: row._id.documentNumber,
+      prNo: pr ? pr.prNumber : null,
       name: row.name,
       totalActual: row.totalActual,
       totalPlan: row.totalPlan,
-      eas : null,
-      prNo: null
+      issueDate: row.issueDate,
+      etaDate: row.etaDate      
     };
   }));
 
   return Promise.all(promises);
 });
+
+getPrNumber = (orderNumber, poNumber) => {
+  return SapPrToPo.findOne()
+    .where('orderNumber').equals(orderNumber)
+    .where('poNumber').equals(poNumber)
+    .select('prNumber');
+};

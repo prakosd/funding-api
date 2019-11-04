@@ -3,12 +3,12 @@ const uniqueValidator = require("mongoose-unique-validator");
 
 const sapPrToPo = mongoose.Schema({
     orderNumber: { type: String, required: true },
-    PrNumber: { type: String, required: true },
-    PoNumber: { type: String, required: true },
+    prNumber: { type: String, required: true },
+    poNumber: { type: String, required: true },
 });
-sapPrToPo.index({ orderNumber: 1, PrNumber: 1, PoNumber: 1 }, { unique: true });
+sapPrToPo.index({ orderNumber: 1, prNumber: 1, poNumber: 1 }, { unique: true });
 sapPrToPo.plugin(uniqueValidator, {
-    message : 'Order number, PorNumber & PoNumber must be unique.'
+    message : 'Order number, PR Number & PO Number must be unique.'
   });
 
 module.exports = mongoose.model("SapPrToPo", sapPrToPo);

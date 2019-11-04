@@ -60,11 +60,22 @@ exports.getMany = ash(async (req, res, next) => {
 
 
 getTransactions = ash(async (orderNumber) => {
-    const result = {
-      prList: await SapCommitmentController.getPrList(orderNumber),
-      poList: await SapCommitmentController.getPoList(orderNumber),
-      grList: null
-    };
-    return result;
+    // const result = {
+    //   prList: await SapCommitmentController.getPrList(orderNumber),
+    //   poList: await SapCommitmentController.getPoList(orderNumber),
+    //   grList: await SapActualController.getGrList(orderNumber),
+    // };
+    // return result;
+
+    const prList = await SapCommitmentController.getPrList(orderNumber);
+    const poList = await SapCommitmentController.getPoList(orderNumber);
+    const grList = await SapActualController.getGrList(orderNumber);
+
+    const transactions = prList.map(row => {
+      // find PO in PR, if find, remove it
+      const result = {
+        prNumber: row.prNumber
+      }
+    });
 });
 

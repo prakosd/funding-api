@@ -1,4 +1,5 @@
 const SapActual = require("../models/sap-actual");
+const ash = require('express-async-handler')
 
 exports.createOne = (req, res, next) => {
   const body = JSON.parse(JSON.stringify(req.body));
@@ -193,3 +194,40 @@ exports.getSapActualTotal = (year) => {
   });
   return aggregate;
 };
+
+exports.getGrList = ash(async (orderNumber) => {
+  const aggregate = SapActual.aggregate();
+  aggregate.match({
+    $and: [
+      { isLinked: true },
+      { orderNumber: orderNumber }
+    ] 
+  }); 
+  aggregate.group({ 
+    _id: {
+      orderNumber: '$orderNumber',
+      purchasingNumber: '$purchasingNumber',
+      referenceNumber: '$referenceNumber'
+     },
+     name: { $first: '$name' },
+     issueDate: { $max: '$documentDate' },
+     postingDate: { $max: '$postingDate' },
+     totalActual: { $sum: '$actualValue' }
+  });
+
+  const result = await aggregate;
+  const promises = result.map(ash(async (row) => {
+    const pr = await getPrNumber(row._id.orderNumber, row._id.documentNumber);
+    return {
+      orderNumber: row._id.orderNumber,
+      poNo: row._id.purchasingNumber,
+      documentNumber: row._id.referenceNumber,
+      name: row.name,
+      totalActual: row.totalActual,
+      issueDate: row.issueDate,
+      postingDate: row.posting,
+    };
+  }));
+
+  return Promise.all(promises);
+});
