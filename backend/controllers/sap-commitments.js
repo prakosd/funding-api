@@ -215,7 +215,8 @@ exports.getPrList = ash(async (orderNumber) => {
      totalActual: { $sum: '$actualValue' },
      totalPlan: { $sum: '$planValue' },
      documentDate: { $max: '$documentDate' },
-     debitDate: { $max: '$debitDate' }
+     debitDate: { $max: '$debitDate' },
+     username: { $first: '$username' }
   });
 
   const result = await aggregate;
@@ -230,7 +231,8 @@ exports.getPrList = ash(async (orderNumber) => {
       totalActual: row.totalActual,
       totalPlan: row.totalPlan,
       issueDate: row.documentDate,
-      etaDate: row.debitDate      
+      etaDate: row.debitDate,
+      username: row.username
     };
   }));
 
@@ -255,7 +257,8 @@ exports.getPoList = ash(async (orderNumber) => {
      totalActual: { $sum: '$actualValue' },
      totalPlan: { $sum: '$planValue' },
      documentDate: { $max: '$documentDate' },
-     debitDate: { $max: '$debitDate' }
+     debitDate: { $max: '$debitDate' },
+     username: { $first: '$username' }
   });
 
   const result = await aggregate;
@@ -269,7 +272,8 @@ exports.getPoList = ash(async (orderNumber) => {
       totalActual: row.totalActual,
       totalPlan: row.totalPlan,
       issueDate: row.documentDate,
-      etaDate: row.debitDate      
+      etaDate: row.debitDate,
+      username: row.username
     };
   }));
 

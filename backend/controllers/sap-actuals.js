@@ -212,7 +212,8 @@ exports.getGrList = ash(async (orderNumber) => {
      name: { $first: '$name' },
      totalActual: { $sum: '$actualValue' },
      documentDate: { $max: '$documentDate' },
-     postingDate: { $max: '$postingDate' }     
+     postingDate: { $max: '$postingDate' },
+     username: { $first: '$username' }
   });
 
   const result = await aggregate;
@@ -225,7 +226,8 @@ exports.getGrList = ash(async (orderNumber) => {
       name: row.name,
       totalActual: row.totalActual,
       issueDate: row.documentDate,
-      postingDate: row.postingDate
+      postingDate: row.postingDate,
+      username: row.username
     };
   }));
 

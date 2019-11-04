@@ -68,19 +68,19 @@ getTransactions = ash(async (orderNumber) => {
     };
     return result;
 
-    const prList = await SapCommitmentController.getPrList(orderNumber);
-    const poList = await SapCommitmentController.getPoList(orderNumber);
-    const grList = await SapActualController.getGrList(orderNumber);
+    // const prList = await SapCommitmentController.getPrList(orderNumber);
+    // const poList = await SapCommitmentController.getPoList(orderNumber);
+    // const grList = await SapActualController.getGrList(orderNumber);
 
     // const transactions = prList.reduce((acc, row) => {
     //   const prNumber = row.prNumber;
-    //   const poNumber;
-    //   const grNumber;
-    //   const name = row.eas ? row.eas.name : row.name;
-    //   const prValue;
-    //   const poValue;
-    //   const grValue;
-    //   const requestor;
+    //   const poNumber = '';
+    //   const grNumber = '';
+    //   const name = row.eas ? row.eas.subject : row.name;
+    //   const prValue = row.totalActual;
+    //   const poValue = 0;
+    //   const grValue = 0;
+    //   const requestor = row.eas ? row.eas.recipient;
     //   const issueDate;
     //   const etaDate;
     //   const actualDate;
@@ -89,5 +89,7 @@ getTransactions = ash(async (orderNumber) => {
     //     prNumber: row.prNumber
     //   }
     // }, []);
+
+    // return Promise.all(transactions);
 });
 
