@@ -21,7 +21,6 @@ exports.getMany = ash(async (req, res, next) => {
     };
   }).reduce((acc, row) => {
     const findIndex = acc.findIndex(d => d.orderNumber === row.orderNumber);
-    console.log()
     if(findIndex < 0) {
       const newValue = {
         year: row.year,
@@ -50,7 +49,8 @@ exports.getMany = ash(async (req, res, next) => {
   }, []).map(ash(async (row) => {
       return {
         ...row,
-        transactions: await getTransactions(row.orderNumber)
+        transactionsA: await getTransactionsA(row.orderNumber),
+        transactionsB: await getTransactionsB(row.orderNumber)
       };
   }));
   Promise.all(promises).then(result => {
@@ -59,37 +59,60 @@ exports.getMany = ash(async (req, res, next) => {
   
 });
 
+getTransactionsB = ash(async (orderNumber) => {
+  const prList = await SapCommitmentController.getPrList(orderNumber);
+  const poList = await SapCommitmentController.getPoList(orderNumber);
+  const grList = await SapActualController.getGrList(orderNumber);
 
-getTransactions = ash(async (orderNumber) => {
+  const transactions = prList.reduce((acc, pr) => {
+    // set base PR value
+    const prNumber = pr.prNumber;
+    let poNumber;
+    let grNumber;
+    const name = pr.eas ? pr.eas.subject : pr.name;
+    const prValue = pr.totalActual;
+    let poValue;
+    let grValue;
+    const requestor = pr.eas ? pr.eas.recipient : pr.username;
+    const issueDate = pr.eas ? pr.eas.creationDate : pr.issueDate;
+    const etaDate = pr.eas ? pr.eas.etaRequest : pr.etaDate;
+    let actualDate;
+    // find PO contains PR
+    filteredPoList = poList.filter(po => po.prNumber === prNumber);
+    const result = filteredPoList.map(po => {
+      filteredGrList = grList.filter(gr => gr.poNumber === po.poNumber);
+      return filteredGrList.map(gr => {
+
+      });
+    });
+  }, []);
+  // const transactions = prList.reduce((acc, row) => {
+  //   const prNumber = row.prNumber;
+  //   let poList = [{ poNumber: 'dddd', totalValue: 1000 },];
+  //   let grNumber;
+  //   const name = row.eas ? row.eas.subject : row.name;
+  //   const prValue = row.totalActual;
+  //   let poValue;
+  //   let grValue;
+  //   const requestor = row.eas ? row.eas.recipient : row.username;
+  //   const issueDate = row.eas ? row.eas.creationDate : row.issueDate;
+  //   const etaDate = row.eas ? row.eas.etaRequest : row.etaDate;
+  //   let actualDate;
+
+  //   const result = {
+  //     prNumber: row.prNumber
+  //   }
+  // }, []);
+
+  return Promise.all(grList);
+});
+
+getTransactionsA = ash(async (orderNumber) => {
     const result = {
       prList: await SapCommitmentController.getPrList(orderNumber),
       poList: await SapCommitmentController.getPoList(orderNumber),
       grList: await SapActualController.getGrList(orderNumber),
     };
     return result;
-
-    // const prList = await SapCommitmentController.getPrList(orderNumber);
-    // const poList = await SapCommitmentController.getPoList(orderNumber);
-    // const grList = await SapActualController.getGrList(orderNumber);
-
-    // const transactions = prList.reduce((acc, row) => {
-    //   const prNumber = row.prNumber;
-    //   const poNumber = '';
-    //   const grNumber = '';
-    //   const name = row.eas ? row.eas.subject : row.name;
-    //   const prValue = row.totalActual;
-    //   const poValue = 0;
-    //   const grValue = 0;
-    //   const requestor = row.eas ? row.eas.recipient;
-    //   const issueDate;
-    //   const etaDate;
-    //   const actualDate;
-
-    //   const result = {
-    //     prNumber: row.prNumber
-    //   }
-    // }, []);
-
-    // return Promise.all(transactions);
 });
 
