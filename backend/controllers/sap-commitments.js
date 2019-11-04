@@ -175,7 +175,7 @@ exports.getOne = (req, res, next) => {
   });
 };
 
-exports.getSapCommitmentTotal = (year) => {
+exports.getTotal = (year) => {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year+1, 0, 1);
   const aggregate = SapCommitment.aggregate();
@@ -221,7 +221,7 @@ exports.getPrList = ash(async (orderNumber) => {
 
   const result = await aggregate;
   const promises = result.map(ash(async (row) => {
-    const eas = await SapEasController.getEasDetail(row._id.documentNumber);
+    const eas = await SapEasController.getDetail(row._id.documentNumber);
     
     return {
       orderNumber: row._id.orderNumber,

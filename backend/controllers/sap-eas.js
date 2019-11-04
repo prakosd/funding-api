@@ -162,7 +162,7 @@ exports.getOne = (req, res, next) => {
   });
 };
 
-exports.getEasDetail = (requisitionNumber) => {
+exports.getDetail = (requisitionNumber) => {
   const query = SapEas.findOne()
     .where('requisitionNumber').equals(requisitionNumber)
     .select('requisitionNumber subject requestor recipient creationDate etaRequest');

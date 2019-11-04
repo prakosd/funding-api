@@ -9,8 +9,8 @@ exports.getMany = ash(async (req, res, next) => {
     year = +req.query.year;
   }
 
-  const sapCommitmentTotal = await SapCommitmentController.getSapCommitmentTotal(year);
-  const sapActualTotal = await SapActualController.getSapActualTotal(year);
+  const sapCommitmentTotal = await SapCommitmentController.getTotal(year);
+  const sapActualTotal = await SapActualController.getTotal(year);
   const promises = [...sapCommitmentTotal, ...sapActualTotal].map(row => {
     return {
       year: row.year,
@@ -64,7 +64,7 @@ getTransactionsB = ash(async (orderNumber) => {
   const poList = await SapCommitmentController.getPoList(orderNumber);
   const grList = await SapActualController.getGrList(orderNumber);
 
-  const transactions = prList.reduce((acc, pr) => {
+  const prSet = prList.reduce((acc, pr) => {
     // set base PR value
     const prNumber = pr.prNumber;
     let poNumber;
@@ -79,12 +79,25 @@ getTransactionsB = ash(async (orderNumber) => {
     let actualDate;
     // find PO contains PR
     filteredPoList = poList.filter(po => po.prNumber === prNumber);
-    const result = filteredPoList.map(po => {
-      filteredGrList = grList.filter(gr => gr.poNumber === po.poNumber);
-      return filteredGrList.map(gr => {
-
+    if(filteredPoList) {
+      filteredPoList.forEach(po => {
+        filteredGrList = grList.filter(gr => gr.poNumber === po.poNumber);
+        filteredGrList.forEach(gr => {
+          return acc.push({
+            prNumber: prNumber,
+            poNumber: po.poNumber,
+            grNumber: gr.grNumber,
+            name: name,
+            prValue: prValue,
+            poValue: po.totalActual,
+            grValue: gr.totalActual
+          });
+        });
       });
-    });
+    } else {
+      
+    }
+
   }, []);
   // const transactions = prList.reduce((acc, row) => {
   //   const prNumber = row.prNumber;
@@ -104,7 +117,7 @@ getTransactionsB = ash(async (orderNumber) => {
   //   }
   // }, []);
 
-  return Promise.all(grList);
+  return Promise.all(prSet);
 });
 
 getTransactionsA = ash(async (orderNumber) => {

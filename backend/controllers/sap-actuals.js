@@ -173,7 +173,7 @@ exports.getOne = (req, res, next) => {
   });
 };
 
-exports.getSapActualTotal = (year) => {
+exports.getTotal = (year) => {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year+1, 0, 1);
   const aggregate = SapActual.aggregate();
