@@ -214,8 +214,8 @@ exports.getPrList = ash(async (orderNumber) => {
      name: { $first: '$name' },
      totalActual: { $sum: '$actualValue' },
      totalPlan: { $sum: '$planValue' },
-     issueDate: { $max: '$documentDate' },
-     etaDate: { $max: '$debitDate' }
+     documentDate: { $max: '$documentDate' },
+     debitDate: { $max: '$debitDate' }
   });
 
   const result = await aggregate;
@@ -224,13 +224,13 @@ exports.getPrList = ash(async (orderNumber) => {
     
     return {
       orderNumber: row._id.orderNumber,
-      documentNumber: row._id.documentNumber,
+      prNumber: row._id.documentNumber,
       eas : eas,
       name: row.name,
       totalActual: row.totalActual,
       totalPlan: row.totalPlan,
-      issueDate: row.issueDate,
-      etaDate: row.etaDate      
+      issueDate: row.documentDate,
+      etaDate: row.debitDate      
     };
   }));
 
@@ -254,8 +254,8 @@ exports.getPoList = ash(async (orderNumber) => {
      name: { $first: '$name' },
      totalActual: { $sum: '$actualValue' },
      totalPlan: { $sum: '$planValue' },
-     issueDate: { $max: '$documentDate' },
-     etaDate: { $max: '$debitDate' }
+     documentDate: { $max: '$documentDate' },
+     debitDate: { $max: '$debitDate' }
   });
 
   const result = await aggregate;
@@ -263,13 +263,13 @@ exports.getPoList = ash(async (orderNumber) => {
     const pr = await getPrNumber(row._id.orderNumber, row._id.documentNumber);
     return {
       orderNumber: row._id.orderNumber,
-      documentNumber: row._id.documentNumber,
-      prNo: pr ? pr.prNumber : null,
+      poNumber: row._id.documentNumber,
+      prNumber: pr ? pr.prNumber : null,
       name: row.name,
       totalActual: row.totalActual,
       totalPlan: row.totalPlan,
-      issueDate: row.issueDate,
-      etaDate: row.etaDate      
+      issueDate: row.documentDate,
+      etaDate: row.debitDate      
     };
   }));
 

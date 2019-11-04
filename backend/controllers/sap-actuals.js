@@ -210,9 +210,9 @@ exports.getGrList = ash(async (orderNumber) => {
       referenceNumber: '$referenceNumber'
      },
      name: { $first: '$name' },
-     issueDate: { $max: '$documentDate' },
-     postingDate: { $max: '$postingDate' },
-     totalActual: { $sum: '$actualValue' }
+     totalActual: { $sum: '$actualValue' },
+     documentDate: { $max: '$documentDate' },
+     postingDate: { $max: '$postingDate' }     
   });
 
   const result = await aggregate;
@@ -220,12 +220,12 @@ exports.getGrList = ash(async (orderNumber) => {
     const pr = await getPrNumber(row._id.orderNumber, row._id.documentNumber);
     return {
       orderNumber: row._id.orderNumber,
-      poNo: row._id.purchasingNumber,
-      documentNumber: row._id.referenceNumber,
+      poNumber: row._id.purchasingNumber,
+      grNumber: row._id.referenceNumber,
       name: row.name,
       totalActual: row.totalActual,
-      issueDate: row.issueDate,
-      postingDate: row.posting,
+      issueDate: row.documentDate,
+      postingDate: row.postingDate
     };
   }));
 

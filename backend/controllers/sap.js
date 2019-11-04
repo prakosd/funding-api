@@ -21,6 +21,7 @@ exports.getMany = ash(async (req, res, next) => {
     };
   }).reduce((acc, row) => {
     const findIndex = acc.findIndex(d => d.orderNumber === row.orderNumber);
+    console.log()
     if(findIndex < 0) {
       const newValue = {
         year: row.year,
@@ -29,7 +30,7 @@ exports.getMany = ash(async (req, res, next) => {
         totalPrPlan: row.category === 'PReq' ? row.totalPlan : 0,
         totalPoActual: row.category === 'POrd' ? row.totalActual : 0,
         totalPoPlan: row.category === 'POrd' ? row.totalPlan : 0,
-        totalActual: row.category === 'PInv' ? row.totalActual : 0
+        totalGrActual: row.category === 'PInv' ? row.totalActual : 0
       };
       acc.push(newValue);
     } else {
@@ -41,7 +42,7 @@ exports.getMany = ash(async (req, res, next) => {
         totalPrPlan: oldValue.totalPrPlan + (row.category === 'PReq' ? row.totalPlan : 0),
         totalPoActual:  oldValue.totalPoActual + (row.category === 'POrd' ? row.totalActual : 0),
         totalPoPlan:  oldValue.totalPoPlan + (row.category === 'POrd' ? row.totalPlan : 0),
-        totalActual:  oldValue.totalActual + (row.category === 'PInv' ? row.totalActual : 0)
+        totalGrActual:  oldValue.totalGrActual + (row.category === 'PInv' ? row.totalActual : 0)
       };
       acc[findIndex] = newValue;
     }
@@ -60,22 +61,33 @@ exports.getMany = ash(async (req, res, next) => {
 
 
 getTransactions = ash(async (orderNumber) => {
-    // const result = {
-    //   prList: await SapCommitmentController.getPrList(orderNumber),
-    //   poList: await SapCommitmentController.getPoList(orderNumber),
-    //   grList: await SapActualController.getGrList(orderNumber),
-    // };
-    // return result;
+    const result = {
+      prList: await SapCommitmentController.getPrList(orderNumber),
+      poList: await SapCommitmentController.getPoList(orderNumber),
+      grList: await SapActualController.getGrList(orderNumber),
+    };
+    return result;
 
     const prList = await SapCommitmentController.getPrList(orderNumber);
     const poList = await SapCommitmentController.getPoList(orderNumber);
     const grList = await SapActualController.getGrList(orderNumber);
 
-    const transactions = prList.map(row => {
-      // find PO in PR, if find, remove it
-      const result = {
-        prNumber: row.prNumber
-      }
-    });
+    // const transactions = prList.reduce((acc, row) => {
+    //   const prNumber = row.prNumber;
+    //   const poNumber;
+    //   const grNumber;
+    //   const name = row.eas ? row.eas.name : row.name;
+    //   const prValue;
+    //   const poValue;
+    //   const grValue;
+    //   const requestor;
+    //   const issueDate;
+    //   const etaDate;
+    //   const actualDate;
+
+    //   const result = {
+    //     prNumber: row.prNumber
+    //   }
+    // }, []);
 });
 
