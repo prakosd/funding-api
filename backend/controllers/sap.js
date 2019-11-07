@@ -47,18 +47,16 @@ exports.getMany = ash(async (req, res, next) => {
     }
     return acc;
   }, []).map(ash(async (row) => {
-      const prA = await getTransactionsA(row.orderNumber);
-      const prB = await getTransactionsB(row.orderNumber)
-      if(prA.length !== prB.length) {
-        return {
-          ...row,
-          transactionsA: prA,
-          transactionsB: prB
-        };
-      }
-      
+      // const prA = await getTransactionsA(row.orderNumber);
+      const transactions = await getTransactionsB(row.orderNumber)
+      return {
+        ...row,
+        transactions: transactions
+      };
   }));
+  
   Promise.all(promises).then(result => {
+    result.sort((a, b) => (a.orderNumber > b.orderNumber) ? 1 : -1);
     res.status(200).json({ message: "Fetching many successfully!", data: result });
   })
   
@@ -66,31 +64,34 @@ exports.getMany = ash(async (req, res, next) => {
 
 getTransactionsB = ash(async (orderNumber) => {
   const prs = await SapCommitmentController.getPrList(orderNumber);
-  const pos = await SapCommitmentController.getPoList(orderNumber);
-  const grs = await SapActualController.getGrList(orderNumber);
+  let pos = await SapCommitmentController.getPoList(orderNumber);
+  let grs = await SapActualController.getGrList(orderNumber);
 
   const prSet = prs.reduce((accPr, pr) => {
     // set base PR value
     const prNumber = pr.prNumber;
     const name = pr.eas ? pr.eas.subject : pr.name;
     const prValue = pr.totalActual;
+    const prPlan = pr.totalPlan;
     const requestor = pr.eas ? pr.eas.recipient : pr.username;
     const issueDate = pr.eas ? pr.eas.creationDate : pr.issueDate;
     const etaDate = pr.eas ? pr.eas.etaRequest : pr.etaDate;
     // find PO contains PR
-    fPos = pos.filter(x => x.prNumber === prNumber);
+    let fPos = pos.filter(x => x.prNumber === prNumber);
     if(fPos && fPos.length > 0) {
-      return fPos.reduce((accPo, po) => {
-        fGrs = grs.filter(y => y.poNumber === po.poNumber);
+      const poSet = fPos.reduce((accPo, po) => {
+        let fGrs = grs.filter(y => y.poNumber === po.poNumber);
         if(fGrs && fGrs.length > 0) {
-         return fGrs.reduce((accGr, gr) => {
+          const grSet = fGrs.reduce((accGr, gr) => {
               accGr.push({
                 prNumber: prNumber,
                 poNumber: po.poNumber,
                 grNumber: gr.grNumber,
                 name: name,
                 prValue: prValue,
+                prPlan: prPlan,
                 poValue: po.totalActual,
+                poPlan: po.totalPlan,
                 grValue: gr.totalActual,
                 requestor: requestor,
                 issueDate: issueDate,
@@ -99,14 +100,18 @@ getTransactionsB = ash(async (orderNumber) => {
               });
               return accGr
           }, []);
+          grs = [...grs.filter(y => y.poNumber !== po.poNumber)];
+          return accPo.concat(grSet);
         } else {
           accPo.push({
             prNumber: prNumber,
             poNumber: po.poNumber,
-            grNumber: '',
+            grNumber: null,
             name: name,
             prValue: prValue,
+            prPlan: prPlan,
             poValue: po.totalActual,
+            poPlan: po.totalPlan,
             grValue: 0,
             requestor: requestor,
             issueDate: issueDate,
@@ -116,14 +121,18 @@ getTransactionsB = ash(async (orderNumber) => {
           return accPo;
         }
       }, []);
+      pos = [...pos.filter(x => x.prNumber !== prNumber)];
+      return accPr.concat(poSet);
     } else {
       accPr.push({
         prNumber: prNumber,
-        poNumber: '',
-        grNumber: '',
+        poNumber: null,
+        grNumber: null,
         name: name,
         prValue: prValue,
+        prPlan: prPlan,
         poValue: 0,
+        poPlan: 0,
         grValue: 0,
         requestor: requestor,
         issueDate: issueDate,
@@ -134,7 +143,73 @@ getTransactionsB = ash(async (orderNumber) => {
     }
   }, []);
 
-  return Promise.all(prSet);
+  const poReduced = pos.reduce((accPo, po) => {
+    let fGrs = grs.filter(y => y.poNumber === po.poNumber);
+    if(fGrs && fGrs.length > 0) {
+      const grSet = fGrs.reduce((accGr, gr) => {
+          accGr.push({
+            prNumber: null,
+            poNumber: po.poNumber,
+            grNumber: gr.grNumber,
+            name: po.name,
+            prValue: 0,
+            prPlan: 0,
+            poValue: po.totalActual,
+            poPlan: po.totalPlan,
+            grValue: gr.totalActual,
+            requestor: po.username,
+            issueDate: po.issueDate,
+            etaDate: po.etaDate,
+            actualDate: gr.postingDate
+          });
+          return accGr
+      }, []);
+      grs = [...grs.filter(y => y.poNumber !== po.poNumber)];
+      return accPo.concat(grSet);
+    } else {
+      accPo.push({
+        prNumber: null,
+        poNumber: po.poNumber,
+        grNumber: null,
+        name: po.name,
+        prValue: 0,
+        prPlan: 0,
+        poValue: po.totalActual,
+        poPlan: po.totalPlan,
+        grValue: 0,
+        requestor: po.username,
+        issueDate: po.issueDate,
+        etaDate: po.etaDate,
+        actualDate: null
+      });
+      return accPo;
+    }
+  }, []);
+  // PO need to reduce with the GR as Well
+
+  const grMapped = grs.map(gr => {
+    return {
+      prNumber: null,
+      poNumber: null,
+      grNumber: gr.grNumber,
+      name: gr.name,
+      prValue: 0,
+      prPlan: 0,
+      poValue: 0,
+      poPlan: 0,
+      grValue: gr.totalActual,
+      requestor: gr.username,
+      issueDate: gr.issueDate,
+      etaDate: null,
+      actualDate: gr.postingDate
+    }
+  });
+  // gr need to be mapped like the rest.
+  //result.sort((a, b) => (a.orderNumber > b.orderNumber) ? 1 : -1);
+  return Promise.all(prSet
+    .concat(poReduced)
+    .concat(grMapped)
+    );
 });
 
 getTransactionsA = ash(async (orderNumber) => {
@@ -145,6 +220,6 @@ getTransactionsA = ash(async (orderNumber) => {
     // };
     // return result;
 
-    return  await SapCommitmentController.getPrList(orderNumber);
+    return await SapCommitmentController.getPrList(orderNumber);
 });
 

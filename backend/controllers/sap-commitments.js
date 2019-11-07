@@ -194,6 +194,7 @@ exports.getTotal = (year) => {
      totalActual: { $sum: '$actualValue' },
      totalPlan: { $sum: '$planValue' }
   });
+  aggregate.sort({ orderNumber: 1 });
   return aggregate;
 };
 
@@ -218,6 +219,7 @@ exports.getPrList = ash(async (orderNumber) => {
      debitDate: { $max: '$debitDate' },
      username: { $first: '$username' }
   });
+  aggregate.sort({ documentDate: -1, documentNumber: 1  });
 
   const result = await aggregate;
   const promises = result.map(ash(async (row) => {
@@ -226,6 +228,8 @@ exports.getPrList = ash(async (orderNumber) => {
     return {
       orderNumber: row._id.orderNumber,
       prNumber: row._id.documentNumber,
+      poNumber: null,
+      grNumber: null,
       eas : eas,
       name: row.name,
       totalActual: row.totalActual,
@@ -260,14 +264,16 @@ exports.getPoList = ash(async (orderNumber) => {
      debitDate: { $max: '$debitDate' },
      username: { $first: '$username' }
   });
-
+  aggregate.sort({ documentDate: -1, documentNumber: 1  });
+  
   const result = await aggregate;
   const promises = result.map(ash(async (row) => {
     const pr = await getPrNumber(row._id.orderNumber, row._id.documentNumber);
     return {
       orderNumber: row._id.orderNumber,
-      poNumber: row._id.documentNumber,
       prNumber: pr ? pr.prNumber : null,
+      poNumber: row._id.documentNumber,
+      grNumber: null,
       name: row.name,
       totalActual: row.totalActual,
       totalPlan: row.totalPlan,

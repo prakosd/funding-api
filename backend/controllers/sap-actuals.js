@@ -192,6 +192,7 @@ exports.getTotal = (year) => {
      totalActual: { $sum: '$actualValue' },
      totalPlan: { $sum: 0 }
   });
+  aggregate.sort({ orderNumber: 1 });
   return aggregate;
 };
 
@@ -206,23 +207,25 @@ exports.getGrList = ash(async (orderNumber) => {
   aggregate.group({ 
     _id: {
       orderNumber: '$orderNumber',
-      purchasingNumber: '$purchasingNumber',
-      referenceNumber: '$referenceNumber'
+      purchasingNumber: '$purchasingNumber'
      },
+     referenceNumber: { $last: '$referenceNumber' },
      name: { $first: '$name' },
      totalActual: { $sum: '$actualValue' },
      documentDate: { $max: '$documentDate' },
      postingDate: { $max: '$postingDate' },
      username: { $first: '$username' }
   });
+  aggregate.sort({ postingDate: -1, purchasingNumber: 1  });
 
   const result = await aggregate;
   const promises = result.map(ash(async (row) => {
     const pr = await getPrNumber(row._id.orderNumber, row._id.documentNumber);
     return {
       orderNumber: row._id.orderNumber,
+      prNumber: null,
       poNumber: row._id.purchasingNumber,
-      grNumber: row._id.referenceNumber,
+      grNumber: row.referenceNumber,
       name: row.name,
       totalActual: row.totalActual,
       issueDate: row.documentDate,
