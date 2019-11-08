@@ -198,13 +198,16 @@ exports.getTotal = (year) => {
   return aggregate;
 };
 
-exports.getPrList = ash(async (orderNumber) => {
+exports.getPrList = ash(async (orderNumber, year) => {
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year+1, 0, 1);
   const aggregate = SapCommitment.aggregate();
   aggregate.match({
     $and: [
       { isLinked: true },
       { orderNumber: orderNumber },
-      { category: 'PReq' }
+      { category: 'PReq' },
+      { debitDate: { $gte: startDate, $lt: endDate } }
     ] 
   }); 
   aggregate.group({ 
@@ -212,12 +215,14 @@ exports.getPrList = ash(async (orderNumber) => {
       orderNumber: '$orderNumber',
       documentNumber: '$documentNumber'
      },
-     name: { $first: '$name' },
+     items: { $push: '$name' },
      totalActual: { $sum: '$actualValue' },
      totalPlan: { $sum: '$planValue' },
      documentDate: { $max: '$documentDate' },
      debitDate: { $max: '$debitDate' },
-     username: { $first: '$username' }
+     username: { $first: '$username' },
+     lastUpdateAt: { $max: '$lastUpdateAt' },
+     lastUpdateBy: { $last: '$lastUpdateBy' }
   });
   aggregate.sort({ documentDate: -1, documentNumber: 1  });
 
@@ -231,25 +236,30 @@ exports.getPrList = ash(async (orderNumber) => {
       poNumber: null,
       grNumber: null,
       eas : eas,
-      name: row.name,
+      items: row.items,
       totalActual: row.totalActual,
       totalPlan: row.totalPlan,
       issueDate: row.documentDate,
       etaDate: row.debitDate,
-      username: row.username
+      username: row.username,
+      lastUpdateAt: row.lastUpdateAt,
+      lastUpdateBy: row.lastUpdateBy
     };
   }));
 
   return Promise.all(promises);
 });
 
-exports.getPoList = ash(async (orderNumber) => {
+exports.getPoList = ash(async (orderNumber, year) => {
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year+1, 0, 1);
   const aggregate = SapCommitment.aggregate();
   aggregate.match({
     $and: [
       { isLinked: true },
       { orderNumber: orderNumber },
-      { category: 'POrd' }
+      { category: 'POrd' },
+      { debitDate: { $gte: startDate, $lt: endDate } }
     ] 
   }); 
   aggregate.group({ 
@@ -257,12 +267,14 @@ exports.getPoList = ash(async (orderNumber) => {
       orderNumber: '$orderNumber',
       documentNumber: '$documentNumber'
      },
-     name: { $first: '$name' },
+     items: { $push: '$name' },
      totalActual: { $sum: '$actualValue' },
      totalPlan: { $sum: '$planValue' },
      documentDate: { $max: '$documentDate' },
      debitDate: { $max: '$debitDate' },
-     username: { $first: '$username' }
+     username: { $first: '$username' },
+     lastUpdateAt: { $max: '$lastUpdateAt' },
+     lastUpdateBy: { $last: '$lastUpdateBy' }
   });
   aggregate.sort({ documentDate: -1, documentNumber: 1  });
   
@@ -274,12 +286,14 @@ exports.getPoList = ash(async (orderNumber) => {
       prNumber: pr ? pr.prNumber : null,
       poNumber: row._id.documentNumber,
       grNumber: null,
-      name: row.name,
+      items: row.items,
       totalActual: row.totalActual,
       totalPlan: row.totalPlan,
       issueDate: row.documentDate,
       etaDate: row.debitDate,
-      username: row.username
+      username: row.username,
+      lastUpdateAt: row.lastUpdateAt,
+      lastUpdateBy: row.lastUpdateBy
     };
   }));
 

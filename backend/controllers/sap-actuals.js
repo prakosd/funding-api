@@ -196,25 +196,34 @@ exports.getTotal = (year) => {
   return aggregate;
 };
 
-exports.getGrList = ash(async (orderNumber) => {
+exports.getGrList = ash(async (orderNumber, year) => {
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year+1, 0, 1);
   const aggregate = SapActual.aggregate();
   aggregate.match({
     $and: [
       { isLinked: true },
-      { orderNumber: orderNumber }
+      { orderNumber: orderNumber },
+      { postingDate: { $gte: startDate, $lt: endDate } }
     ] 
   }); 
+  // purchasingNumber: '$purchasingNumber'
+  // $cond: { if: { $exists: '$purchasingNumber' }, then: '$purchasingNumber', else: '$referenceNumber' }
   aggregate.group({ 
     _id: {
       orderNumber: '$orderNumber',
-      purchasingNumber: '$purchasingNumber'
+      purchasingNumber: { 
+        $ifNull: ['$purchasingNumber', '$referenceNumber'] 
+       }
      },
-     referenceNumber: { $last: '$referenceNumber' },
-     name: { $first: '$name' },
+     items: { $push: '$name' },
+     referenceNumber: { $first: '$referenceNumber' },
      totalActual: { $sum: '$actualValue' },
      documentDate: { $max: '$documentDate' },
      postingDate: { $max: '$postingDate' },
-     username: { $first: '$username' }
+     username: { $first: '$username' },
+     lastUpdateAt: { $max: '$lastUpdateAt' },
+     lastUpdateBy: { $last: '$lastUpdateBy' }
   });
   aggregate.sort({ postingDate: -1, purchasingNumber: 1  });
 
@@ -226,11 +235,13 @@ exports.getGrList = ash(async (orderNumber) => {
       prNumber: null,
       poNumber: row._id.purchasingNumber,
       grNumber: row.referenceNumber,
-      name: row.name,
+      items: row.items,
       totalActual: row.totalActual,
       issueDate: row.documentDate,
       postingDate: row.postingDate,
-      username: row.username
+      username: row.username,
+      lastUpdateAt: row.lastUpdateAt,
+      lastUpdateBy: row.lastUpdateBy
     };
   }));
 

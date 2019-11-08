@@ -3,7 +3,7 @@ const SapCommitmentController = require("../controllers/sap-commitments");
 const SapActualController = require("../controllers/sap-actuals");
 
 
-exports.getMany = ash(async (req, res, next) => {
+exports.getManyV1 = ash(async (req, res, next) => {
   let year = (new Date).getFullYear();
   if (req.query.year) {
     year = +req.query.year;
@@ -48,7 +48,7 @@ exports.getMany = ash(async (req, res, next) => {
     return acc;
   }, []).map(ash(async (row) => {
       // const prA = await getTransactionsA(row.orderNumber);
-      const transactions = await getTransactionsB(row.orderNumber)
+      const transactions = await getTransactions(row.orderNumber, year)
       return {
         ...row,
         transactions: transactions
@@ -59,23 +59,35 @@ exports.getMany = ash(async (req, res, next) => {
     result.sort((a, b) => (a.orderNumber > b.orderNumber) ? 1 : -1);
     res.status(200).json({ message: "Fetching many successfully!", data: result });
   })
-  
 });
 
-getTransactionsB = ash(async (orderNumber) => {
-  const prs = await SapCommitmentController.getPrList(orderNumber);
-  let pos = await SapCommitmentController.getPoList(orderNumber);
-  let grs = await SapActualController.getGrList(orderNumber);
+exports.getManyV2 = ash(async (req, res, next) => {
+  let year = (new Date).getFullYear();
+  if (req.query.year) {
+    year = +req.query.year;
+  }
+
+});
+
+
+
+getTransactions = ash(async (orderNumber, year) => {
+  const prs = await SapCommitmentController.getPrList(orderNumber, year);
+  let pos = await SapCommitmentController.getPoList(orderNumber, year);
+  let grs = await SapActualController.getGrList(orderNumber, year);
 
   const prSet = prs.reduce((accPr, pr) => {
     // set base PR value
     const prNumber = pr.prNumber;
-    const name = pr.eas ? pr.eas.subject : pr.name;
+    const subject = pr.eas ? pr.eas.subject : pr.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, []);
+    const items = pr.items;
     const prValue = pr.totalActual;
     const prPlan = pr.totalPlan;
     const requestor = pr.eas ? pr.eas.recipient : pr.username;
     const issueDate = pr.eas ? pr.eas.creationDate : pr.issueDate;
     const etaDate = pr.eas ? pr.eas.etaRequest : pr.etaDate;
+    const lastUpdateAt = pr.lastUpdateAt;
+    const lastUpdateBy = pr.lastUpdateBy;
     // find PO contains PR
     let fPos = pos.filter(x => x.prNumber === prNumber);
     if(fPos && fPos.length > 0) {
@@ -87,7 +99,8 @@ getTransactionsB = ash(async (orderNumber) => {
                 prNumber: prNumber,
                 poNumber: po.poNumber,
                 grNumber: gr.grNumber,
-                name: name,
+                subject: subject,
+                items: po.items,
                 prValue: prValue,
                 prPlan: prPlan,
                 poValue: po.totalActual,
@@ -96,7 +109,9 @@ getTransactionsB = ash(async (orderNumber) => {
                 requestor: requestor,
                 issueDate: issueDate,
                 etaDate: etaDate,
-                actualDate: gr.postingDate
+                actualDate: gr.postingDate,
+                lastUpdateAt: gr.lastUpdateAt,
+                lastUpdateBy: gr.lastUpdateBy
               });
               return accGr
           }, []);
@@ -107,7 +122,8 @@ getTransactionsB = ash(async (orderNumber) => {
             prNumber: prNumber,
             poNumber: po.poNumber,
             grNumber: null,
-            name: name,
+            subject: subject,
+            items: po.items,
             prValue: prValue,
             prPlan: prPlan,
             poValue: po.totalActual,
@@ -116,7 +132,9 @@ getTransactionsB = ash(async (orderNumber) => {
             requestor: requestor,
             issueDate: issueDate,
             etaDate: etaDate,
-            actualDate: null
+            actualDate: null,
+            lastUpdateAt: po.lastUpdateAt,
+            lastUpdateBy: po.lastUpdateBy
           });
           return accPo;
         }
@@ -128,7 +146,8 @@ getTransactionsB = ash(async (orderNumber) => {
         prNumber: prNumber,
         poNumber: null,
         grNumber: null,
-        name: name,
+        subject: subject,
+        items: items,
         prValue: prValue,
         prPlan: prPlan,
         poValue: 0,
@@ -137,13 +156,16 @@ getTransactionsB = ash(async (orderNumber) => {
         requestor: requestor,
         issueDate: issueDate,
         etaDate: etaDate,
-        actualDate: null
+        actualDate: null,
+        lastUpdateAt: lastUpdateAt,
+        lastUpdateBy: lastUpdateBy
       });
       return accPr;
     }
   }, []);
 
   const poReduced = pos.reduce((accPo, po) => {
+    const subject = po.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, []);
     let fGrs = grs.filter(y => y.poNumber === po.poNumber);
     if(fGrs && fGrs.length > 0) {
       const grSet = fGrs.reduce((accGr, gr) => {
@@ -151,7 +173,8 @@ getTransactionsB = ash(async (orderNumber) => {
             prNumber: null,
             poNumber: po.poNumber,
             grNumber: gr.grNumber,
-            name: po.name,
+            subject: subject,
+            items: po.items,
             prValue: 0,
             prPlan: 0,
             poValue: po.totalActual,
@@ -160,7 +183,9 @@ getTransactionsB = ash(async (orderNumber) => {
             requestor: po.username,
             issueDate: po.issueDate,
             etaDate: po.etaDate,
-            actualDate: gr.postingDate
+            actualDate: gr.postingDate,
+            lastUpdateAt: gr.lastUpdateAt,
+            lastUpdateBy: gr.lastUpdateBy
           });
           return accGr
       }, []);
@@ -171,7 +196,8 @@ getTransactionsB = ash(async (orderNumber) => {
         prNumber: null,
         poNumber: po.poNumber,
         grNumber: null,
-        name: po.name,
+        subject: subject,
+        items: po.items,
         prValue: 0,
         prPlan: 0,
         poValue: po.totalActual,
@@ -180,7 +206,9 @@ getTransactionsB = ash(async (orderNumber) => {
         requestor: po.username,
         issueDate: po.issueDate,
         etaDate: po.etaDate,
-        actualDate: null
+        actualDate: null,
+        lastUpdateAt: po.lastUpdateAt,
+        lastUpdateBy: po.lastUpdateBy
       });
       return accPo;
     }
@@ -190,9 +218,10 @@ getTransactionsB = ash(async (orderNumber) => {
   const grMapped = grs.map(gr => {
     return {
       prNumber: null,
-      poNumber: null,
+      poNumber: gr.poNumber,
       grNumber: gr.grNumber,
-      name: gr.name,
+      subject: gr.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, []),
+      items: gr.items,
       prValue: 0,
       prPlan: 0,
       poValue: 0,
@@ -201,7 +230,9 @@ getTransactionsB = ash(async (orderNumber) => {
       requestor: gr.username,
       issueDate: gr.issueDate,
       etaDate: null,
-      actualDate: gr.postingDate
+      actualDate: gr.postingDate,
+      lastUpdateAt: gr.lastUpdateAt,
+      lastUpdateBy: gr.lastUpdateBy
     }
   });
   // gr need to be mapped like the rest.
@@ -212,14 +243,14 @@ getTransactionsB = ash(async (orderNumber) => {
     );
 });
 
-getTransactionsA = ash(async (orderNumber) => {
-    // const result = {
-    //   prList: await SapCommitmentController.getPrList(orderNumber),
-    //   poList: await SapCommitmentController.getPoList(orderNumber),
-    //   grList: await SapActualController.getGrList(orderNumber),
-    // };
-    // return result;
+// getTransactionsA = ash(async (orderNumber) => {
+//     // const result = {
+//     //   prList: await SapCommitmentController.getPrList(orderNumber),
+//     //   poList: await SapCommitmentController.getPoList(orderNumber),
+//     //   grList: await SapActualController.getGrList(orderNumber),
+//     // };
+//     // return result;
 
-    return await SapCommitmentController.getPrList(orderNumber);
-});
+//     return await SapCommitmentController.getPrList(orderNumber);
+// });
 
