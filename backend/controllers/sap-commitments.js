@@ -175,7 +175,7 @@ exports.getOne = (req, res, next) => {
   });
 };
 
-exports.getTotal = (year) => {
+exports.getTotal = (year, orderNumber) => {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year+1, 0, 1);
   const aggregate = SapCommitment.aggregate();
@@ -198,7 +198,7 @@ exports.getTotal = (year) => {
   return aggregate;
 };
 
-exports.getPrList = ash(async (orderNumber, year) => {
+exports.getPrList = ash(async (year, orderNumber) => {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year+1, 0, 1);
   const aggregate = SapCommitment.aggregate();
@@ -250,7 +250,7 @@ exports.getPrList = ash(async (orderNumber, year) => {
   return Promise.all(promises);
 });
 
-exports.getPoList = ash(async (orderNumber, year) => {
+exports.getPoList = ash(async (year, orderNumber) => {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year+1, 0, 1);
   const aggregate = SapCommitment.aggregate();

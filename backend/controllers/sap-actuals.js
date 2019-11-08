@@ -173,7 +173,7 @@ exports.getOne = (req, res, next) => {
   });
 };
 
-exports.getTotal = (year) => {
+exports.getTotal = (year, orderNumber) => {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year+1, 0, 1);
   const aggregate = SapActual.aggregate();
@@ -196,7 +196,7 @@ exports.getTotal = (year) => {
   return aggregate;
 };
 
-exports.getGrList = ash(async (orderNumber, year) => {
+exports.getGrList = ash(async (year, orderNumber) => {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year+1, 0, 1);
   const aggregate = SapActual.aggregate();

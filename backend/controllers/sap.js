@@ -3,15 +3,73 @@ const SapCommitmentController = require("../controllers/sap-commitments");
 const SapActualController = require("../controllers/sap-actuals");
 
 
-exports.getManyV1 = ash(async (req, res, next) => {
+exports.getFullV1 = (req, res, next) => {
   let year = (new Date).getFullYear();
   if (req.query.year) {
     year = +req.query.year;
   }
 
+  getOrderNumbers(year).then(result => {
+    result.sort((a, b) => (a.orderNumber > b.orderNumber) ? 1 : -1);
+    res.status(200).json({ message: "Fetching many successfully!", data: result });
+  }).catch(error => {
+    console.log(error);
+    res.status(500).json({ message: "Fetching many failed!" });
+  });
+};
+
+exports.getFullV2 = async (req, res, next) => {
+  let year = (new Date).getFullYear();
+  if (req.query.year) {
+    year = +req.query.year;
+  }
+
+  getOrderNumbersV2(year).then(result => {
+    result.sort((a, b) => (a.orderNumber > b.orderNumber) ? 1 : -1);
+    res.status(200).json({ message: "Fetching many successfully!", data: result });
+  }).catch(error => {
+    console.log(error);
+    res.status(500).json({ message: "Fetching many failed!" });
+  });
+};
+
+
+getSimple = ash(async (year) => {
+  const orderNumbers = await getOrderNumbers(year);
+  const result = orderNumbers.reduce((acc,o) => {
+    const year =  o.year;
+    const orderNumber = o.orderNumber;
+    const transactions = o.transactions.map(t => {
+      const item = {
+        year: year,
+        orderNumber: orderNumber,
+        prNumber: t.prNumber,
+        poNumber: t.poNumber,
+        grNumber: t.grNumber,
+        name: t.subject,
+        prValue: t.prValue,
+        poValue: t.poValue,
+        grValue: t.grValue,
+        requestor: t.requestor,
+        issueDate: t.issueDate,
+        etaDate: t.etaDate,
+        grDate: t.actualDate,
+        lastUpdateAt: t.lastUpdateAt,
+        lastUpdateBy: t.lastUpdateBy
+      };
+      return item;
+    });
+    acc = acc.concat(transactions)
+    return acc;
+  }, []);
+
+  return Promise.all(result);
+});
+
+getOrderNumbers = ash(async (year, isFull) => {
   const sapCommitmentTotal = await SapCommitmentController.getTotal(year);
   const sapActualTotal = await SapActualController.getTotal(year);
-  const promises = [...sapCommitmentTotal, ...sapActualTotal].map(row => {
+  const result = [...sapCommitmentTotal, ...sapActualTotal].map(row => {
     return {
       year: row.year,
       orderNumber: row._id.orderNumber,
@@ -48,28 +106,16 @@ exports.getManyV1 = ash(async (req, res, next) => {
     return acc;
   }, []).map(ash(async (row) => {
       // const prA = await getTransactionsA(row.orderNumber);
-      const transactions = await getTransactions(row.orderNumber, year)
+      let transactions = null;
+      if (isFull) { transactions = await getTransactions(row.orderNumber, year) }
       return {
         ...row,
         transactions: transactions
       };
   }));
-  
-  Promise.all(promises).then(result => {
-    result.sort((a, b) => (a.orderNumber > b.orderNumber) ? 1 : -1);
-    res.status(200).json({ message: "Fetching many successfully!", data: result });
-  })
+
+  return Promise.all(result);
 });
-
-exports.getManyV2 = ash(async (req, res, next) => {
-  let year = (new Date).getFullYear();
-  if (req.query.year) {
-    year = +req.query.year;
-  }
-
-});
-
-
 
 getTransactions = ash(async (orderNumber, year) => {
   const prs = await SapCommitmentController.getPrList(orderNumber, year);
@@ -79,7 +125,7 @@ getTransactions = ash(async (orderNumber, year) => {
   const prSet = prs.reduce((accPr, pr) => {
     // set base PR value
     const prNumber = pr.prNumber;
-    const subject = pr.eas ? pr.eas.subject : pr.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, []);
+    const subject = pr.eas ? pr.eas.subject : pr.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, '');
     const items = pr.items;
     const prValue = pr.totalActual;
     const prPlan = pr.totalPlan;
@@ -165,7 +211,7 @@ getTransactions = ash(async (orderNumber, year) => {
   }, []);
 
   const poReduced = pos.reduce((accPo, po) => {
-    const subject = po.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, []);
+    const subject = po.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, '');
     let fGrs = grs.filter(y => y.poNumber === po.poNumber);
     if(fGrs && fGrs.length > 0) {
       const grSet = fGrs.reduce((accGr, gr) => {
@@ -220,7 +266,7 @@ getTransactions = ash(async (orderNumber, year) => {
       prNumber: null,
       poNumber: gr.poNumber,
       grNumber: gr.grNumber,
-      subject: gr.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, []),
+      subject: gr.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, ''),
       items: gr.items,
       prValue: 0,
       prPlan: 0,
