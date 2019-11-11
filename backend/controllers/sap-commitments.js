@@ -179,9 +179,11 @@ exports.getTotal = (year, orderNumber) => {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year+1, 0, 1);
   const aggregate = SapCommitment.aggregate();
+  
   aggregate.match({
     $and: [
       { isLinked: true },
+      { orderNumber: new RegExp(orderNumber) },  
       { debitDate: { $gte: startDate, $lt: endDate } }
     ] 
   }); 

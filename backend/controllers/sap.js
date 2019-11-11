@@ -3,39 +3,88 @@ const SapCommitmentController = require("../controllers/sap-commitments");
 const SapActualController = require("../controllers/sap-actuals");
 
 
-exports.getFullV1 = (req, res, next) => {
+exports.getSimple = (req, res, next) => {
   let year = (new Date).getFullYear();
-  if (req.query.year) {
-    year = +req.query.year;
+  if (req.params.year) {
+    year = +req.params.year;
   }
 
-  getOrderNumbers(year).then(result => {
+  let orderNumber = ''
+  if (req.params.orderNumber) {
+    orderNumber = req.params.orderNumber;
+  }
+
+
+  getTableOutput(year, orderNumber).then(result => {
     result.sort((a, b) => (a.orderNumber > b.orderNumber) ? 1 : -1);
-    res.status(200).json({ message: "Fetching many successfully!", data: result });
+    res.status(200).json({ message: "Get simple successfully!", data: result });
   }).catch(error => {
     console.log(error);
-    res.status(500).json({ message: "Fetching many failed!" });
+    res.status(500).json({ message: "Get simple failed!" });
   });
 };
 
-exports.getFullV2 = async (req, res, next) => {
+exports.getFull = (req, res, next) => {
   let year = (new Date).getFullYear();
-  if (req.query.year) {
-    year = +req.query.year;
+  if (req.params.year) {
+    year = +req.params.year;
   }
 
-  getOrderNumbersV2(year).then(result => {
+  let orderNumber = ''
+  if (req.params.orderNumber) {
+    orderNumber = req.params.orderNumber;
+  }
+
+  getOrderNumbers(year, orderNumber, true).then(result => {
     result.sort((a, b) => (a.orderNumber > b.orderNumber) ? 1 : -1);
-    res.status(200).json({ message: "Fetching many successfully!", data: result });
+    res.status(200).json({ message: "Get full successfully!", data: result });
   }).catch(error => {
     console.log(error);
-    res.status(500).json({ message: "Fetching many failed!" });
+    res.status(500).json({ message: "Get full failed!" });
   });
 };
 
+exports.getSum = (req, res, next) => {
+  let year = (new Date).getFullYear();
+  if (req.params.year) {
+    year = +req.params.year;
+  }
 
-getSimple = ash(async (year) => {
-  const orderNumbers = await getOrderNumbers(year);
+  let orderNumber = ''
+  if (req.params.orderNumber) {
+    orderNumber = req.params.orderNumber;
+  }
+
+  getOrderNumbers(year, orderNumber, false).then(result => {
+    result.sort((a, b) => (a.orderNumber > b.orderNumber) ? 1 : -1);
+    res.status(200).json({ message: "Get sum successfully!", data: result });
+  }).catch(error => {
+    console.log(error);
+    res.status(500).json({ message: "Get sum failed!" });
+  });
+};
+
+exports.getDetails = (req, res, next) => {
+  let year = (new Date).getFullYear();
+  if (req.params.year) {
+    year = +req.params.year;
+  }
+
+  let orderNumber = ''
+  if (req.params.orderNumber) {
+    orderNumber = req.params.orderNumber;
+  }
+
+  getTransactions(year, orderNumber).then(result => {
+    res.status(200).json({ message: "Get detail successfully!", data: result });
+  }).catch(error => {
+    console.log(error);
+    res.status(500).json({ message: "Get detail failed!" });
+  });
+};
+
+getTableOutput = ash(async (year, orderNumber) => {
+  const orderNumbers = await getOrderNumbers(year, orderNumber, true);
   const result = orderNumbers.reduce((acc,o) => {
     const year =  o.year;
     const orderNumber = o.orderNumber;
@@ -66,9 +115,9 @@ getSimple = ash(async (year) => {
   return Promise.all(result);
 });
 
-getOrderNumbers = ash(async (year, isFull) => {
-  const sapCommitmentTotal = await SapCommitmentController.getTotal(year);
-  const sapActualTotal = await SapActualController.getTotal(year);
+getOrderNumbers = ash(async (year, orderNumber, isTransactions) => {
+  const sapCommitmentTotal = await SapCommitmentController.getTotal(year, orderNumber);
+  const sapActualTotal = await SapActualController.getTotal(year, orderNumber);
   const result = [...sapCommitmentTotal, ...sapActualTotal].map(row => {
     return {
       year: row.year,
@@ -107,7 +156,7 @@ getOrderNumbers = ash(async (year, isFull) => {
   }, []).map(ash(async (row) => {
       // const prA = await getTransactionsA(row.orderNumber);
       let transactions = null;
-      if (isFull) { transactions = await getTransactions(row.orderNumber, year) }
+      if (isTransactions) { transactions = await getTransactions(year, row.orderNumber) }
       return {
         ...row,
         transactions: transactions
@@ -117,10 +166,10 @@ getOrderNumbers = ash(async (year, isFull) => {
   return Promise.all(result);
 });
 
-getTransactions = ash(async (orderNumber, year) => {
-  const prs = await SapCommitmentController.getPrList(orderNumber, year);
-  let pos = await SapCommitmentController.getPoList(orderNumber, year);
-  let grs = await SapActualController.getGrList(orderNumber, year);
+getTransactions = ash(async (year, orderNumber) => {
+  const prs = await SapCommitmentController.getPrList(year, orderNumber);
+  let pos = await SapCommitmentController.getPoList(year, orderNumber);
+  let grs = await SapActualController.getGrList(year, orderNumber);
 
   const prSet = prs.reduce((accPr, pr) => {
     // set base PR value
