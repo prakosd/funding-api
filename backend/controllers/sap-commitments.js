@@ -1,7 +1,7 @@
 const ash = require('express-async-handler')
 const SapEasController = require("../controllers/sap-eas");
 const SapCommitment = require("../models/sap-commitment");
-const SapPrToPo = require("../models/sap-pr-to-po");
+const SapPrToPoController = require("../controllers/sap-pr-to-po");
 
 exports.createOne = (req, res, next) => {
   const body = JSON.parse(JSON.stringify(req.body));
@@ -285,7 +285,7 @@ exports.getPoList = ash(async (year, orderNumber) => {
   
   const result = await aggregate;
   const promises = result.map(ash(async (row) => {
-    const pr = await getPrNumber(row._id.orderNumber, row._id.documentNumber);
+    const pr = await SapPrToPoController.getPrNumber(row._id.orderNumber, row._id.documentNumber);
     return {
       orderNumber: row._id.orderNumber,
       prNumber: pr ? pr.prNumber : null,
@@ -306,9 +306,3 @@ exports.getPoList = ash(async (year, orderNumber) => {
   return Promise.all(promises);
 });
 
-getPrNumber = (orderNumber, poNumber) => {
-  return SapPrToPo.findOne()
-    .where('orderNumber').equals(orderNumber)
-    .where('poNumber').equals(poNumber)
-    .select('prNumber');
-};
