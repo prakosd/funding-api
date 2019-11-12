@@ -208,8 +208,7 @@ exports.getGrList = ash(async (year, orderNumber) => {
       { postingDate: { $gte: startDate, $lt: endDate } }
     ] 
   }); 
-  // purchasingNumber: '$purchasingNumber'
-  // $cond: { if: { $exists: '$purchasingNumber' }, then: '$purchasingNumber', else: '$referenceNumber' }
+
   aggregate.group({ 
     _id: {
       orderNumber: '$orderNumber',
@@ -217,7 +216,9 @@ exports.getGrList = ash(async (year, orderNumber) => {
         $ifNull: ['$purchasingNumber', '$referenceNumber'] 
        }
      },
-     items: { $push: '$name' },
+     items: { $addToSet: '$name' },
+     headerTexts: { $addToSet: '$headerText' },
+     remarks: { $addToSet: '$remark' },
      referenceNumber: { $first: '$referenceNumber' },
      totalActual: { $sum: '$actualValue' },
      documentDate: { $max: '$documentDate' },
@@ -230,13 +231,14 @@ exports.getGrList = ash(async (year, orderNumber) => {
 
   const result = await aggregate;
   const promises = result.map(ash(async (row) => {
-    const pr = await getPrNumber(row._id.orderNumber, row._id.documentNumber);
     return {
       orderNumber: row._id.orderNumber,
       prNumber: null,
       poNumber: row._id.purchasingNumber,
       grNumber: row.referenceNumber,
       items: row.items,
+      remarks: row.remarks,
+      headerTexts: row.headerTexts,
       totalActual: row.totalActual,
       issueDate: row.documentDate,
       postingDate: row.postingDate,

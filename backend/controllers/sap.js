@@ -104,7 +104,9 @@ getTableOutput = ash(async (year, orderNumber) => {
         etaDate: t.etaDate,
         grDate: t.actualDate,
         lastUpdateAt: t.lastUpdateAt,
-        lastUpdateBy: t.lastUpdateBy
+        lastUpdateBy: t.lastUpdateBy,
+        remarks: t.remarks,
+        headerTexts: t.headerTexts
       };
       return item;
     });
@@ -176,6 +178,7 @@ getTransactions = ash(async (year, orderNumber) => {
     const prNumber = pr.prNumber;
     const subject = pr.eas ? pr.eas.subject : pr.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, '');
     const items = pr.items;
+    const remarks = pr.remarks;
     const prValue = pr.totalActual;
     const prPlan = pr.totalPlan;
     const requestor = pr.eas ? pr.eas.recipient : pr.username;
@@ -196,6 +199,8 @@ getTransactions = ash(async (year, orderNumber) => {
                 grNumber: gr.grNumber,
                 subject: subject,
                 items: po.items,
+                remarks: remarks.concat(po.remarks).concat(gr.remarks),
+                headerTexts: gr.headerTexts,
                 prValue: prValue,
                 prPlan: prPlan,
                 poValue: po.totalActual,
@@ -219,6 +224,8 @@ getTransactions = ash(async (year, orderNumber) => {
             grNumber: null,
             subject: subject,
             items: po.items,
+            remarks: remarks.concat(po.remarks),
+            headerTexts: [],
             prValue: prValue,
             prPlan: prPlan,
             poValue: po.totalActual,
@@ -243,6 +250,8 @@ getTransactions = ash(async (year, orderNumber) => {
         grNumber: null,
         subject: subject,
         items: items,
+        remarks: remarks,
+        headerTexts: [],
         prValue: prValue,
         prPlan: prPlan,
         poValue: 0,
@@ -270,6 +279,8 @@ getTransactions = ash(async (year, orderNumber) => {
             grNumber: gr.grNumber,
             subject: subject,
             items: po.items,
+            remarks: po.remarks.concat(gr.remarks),
+            headerTexts: gr.headerTexts,
             prValue: 0,
             prPlan: 0,
             poValue: po.totalActual,
@@ -293,6 +304,8 @@ getTransactions = ash(async (year, orderNumber) => {
         grNumber: null,
         subject: subject,
         items: po.items,
+        remarks: po.remarks,
+        headerTexts: [],
         prValue: 0,
         prPlan: 0,
         poValue: po.totalActual,
@@ -317,6 +330,8 @@ getTransactions = ash(async (year, orderNumber) => {
       grNumber: gr.grNumber,
       subject: gr.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, ''),
       items: gr.items,
+      remarks: gr.remarks,
+      headerTexts: gr.headerTexts,
       prValue: 0,
       prPlan: 0,
       poValue: 0,
