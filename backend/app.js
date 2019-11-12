@@ -46,7 +46,7 @@ const apiWebPath = "/api/funding/web/";
 app.use(apiWebPath + "sap/commitments", sapCommitmentRoutes);
 app.use(apiWebPath + "sap/actuals", sapActualRoutes);
 app.use(apiWebPath + "sap/eas", sapEasRoutes);
-app.use(apiWebPath + "sap/prtopo", sapPrToPoRoutes);
+app.use(apiWebPath + "sap/prtopos", sapPrToPoRoutes);
 app.use(apiWebPath + "sap", sapRoutes);
 
 module.exports = app;
