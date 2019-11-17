@@ -4,12 +4,14 @@ const uniqueValidator = require("mongoose-unique-validator");
 const sapCommitmentEta = mongoose.Schema({
     orderNumber: { type: String, required: true },
     documentNumber: { type: String, required: true },
-    poNumber: { type: String, required: true },
+    etaDate: { type: Date, required: true },
+    lastUpdateAt: { type: Date, required: true },
+    lastUpdateBy: { type: String, required: true }
 });
-sapPrToPo.index({ orderNumber: 1, prNumber: 1, poNumber: 1 }, { unique: true });
-sapPrToPo.plugin(uniqueValidator, {
-    message : 'Order number, PR Number & PO Number must be unique.'
+sapCommitmentEta.index({ orderNumber: 1, documentNumber: 1 }, { unique: true });
+sapCommitmentEta.plugin(uniqueValidator, {
+    message : 'Order number and documentNumber must be unique.'
   });
 
-module.exports = mongoose.model("SapPrToPo", sapPrToPo);
+module.exports = mongoose.model("SapCommitmentEta", sapCommitmentEta);
   
