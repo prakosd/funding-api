@@ -86,8 +86,8 @@ exports.getDetails = (req, res, next) => {
 
 getTableOutput = ash(async (year, orderNumber) => {
   const orderNumbers = await getOrderNumbers(year, orderNumber, true);
-  const result = orderNumbers.reduce((acc,o) => {
-    const year =  o.year;
+  const result = orderNumbers.reduce((acc, o) => {
+    const year = o.year;
     const orderNumber = o.orderNumber;
     const transactions = o.transactions.map(t => {
       const item = {
@@ -131,7 +131,7 @@ getOrderNumbers = ash(async (year, orderNumber, isTransactions) => {
     };
   }).reduce((acc, row) => {
     const findIndex = acc.findIndex(d => d.orderNumber === row.orderNumber);
-    if(findIndex < 0) {
+    if (findIndex < 0) {
       const newValue = {
         year: row.year,
         orderNumber: row.orderNumber,
@@ -149,21 +149,21 @@ getOrderNumbers = ash(async (year, orderNumber, isTransactions) => {
         orderNumber: oldValue.orderNumber,
         totalPrActual: oldValue.totalPrActual + (row.category === 'PReq' ? row.totalActual : 0),
         totalPrPlan: oldValue.totalPrPlan + (row.category === 'PReq' ? row.totalPlan : 0),
-        totalPoActual:  oldValue.totalPoActual + (row.category === 'POrd' ? row.totalActual : 0),
-        totalPoPlan:  oldValue.totalPoPlan + (row.category === 'POrd' ? row.totalPlan : 0),
-        totalGrActual:  oldValue.totalGrActual + (row.category === 'PInv' ? row.totalActual : 0)
+        totalPoActual: oldValue.totalPoActual + (row.category === 'POrd' ? row.totalActual : 0),
+        totalPoPlan: oldValue.totalPoPlan + (row.category === 'POrd' ? row.totalPlan : 0),
+        totalGrActual: oldValue.totalGrActual + (row.category === 'PInv' ? row.totalActual : 0)
       };
       acc[findIndex] = newValue;
     }
     return acc;
   }, []).map(ash(async (row) => {
-      // const prA = await getTransactionsA(row.orderNumber);
-      let transactions = null;
-      if (isTransactions) { transactions = await getTransactions(year, row.orderNumber) }
-      return {
-        ...row,
-        transactions: transactions
-      };
+    // const prA = await getTransactionsA(row.orderNumber);
+    let transactions = null;
+    if (isTransactions) { transactions = await getTransactions(year, row.orderNumber) }
+    return {
+      ...row,
+      transactions: transactions
+    };
   }));
 
   return Promise.all(result);
@@ -189,32 +189,32 @@ getTransactions = ash(async (year, orderNumber) => {
     const lastUpdateBy = pr.lastUpdateBy;
     // find PO contains PR
     let fPos = pos.filter(x => x.prNumber === prNumber);
-    if(fPos && fPos.length > 0) {
+    if (fPos && fPos.length > 0) {
       const poSet = fPos.reduce((accPo, po) => {
         let fGrs = grs.filter(y => y.poNumber === po.poNumber);
-        if(fGrs && fGrs.length > 0) {
+        if (fGrs && fGrs.length > 0) {
           const grSet = fGrs.reduce((accGr, gr) => {
-              accGr.push({
-                prNumber: prNumber,
-                poNumber: po.poNumber,
-                grNumber: gr.grNumber,
-                subject: subject,
-                items: po.items,
-                remarks: remarks.concat(po.remarks).concat(gr.remarks),
-                headerTexts: gr.headerTexts,
-                prValue: prValue,
-                prPlan: prPlan,
-                poValue: po.totalActual,
-                poPlan: po.totalPlan,
-                grValue: gr.totalActual,
-                requestor: requestor,
-                issueDate: issueDate,
-                etaDate: etaDate,
-                actualDate: gr.postingDate,
-                lastUpdateAt: gr.lastUpdateAt,
-                lastUpdateBy: gr.lastUpdateBy
-              });
-              return accGr
+            accGr.push({
+              prNumber: prNumber,
+              poNumber: po.poNumber,
+              grNumber: gr.grNumber,
+              subject: subject,
+              items: po.items,
+              remarks: remarks.concat(po.remarks).concat(gr.remarks),
+              headerTexts: gr.headerTexts,
+              prValue: prValue,
+              prPlan: prPlan,
+              poValue: po.totalActual,
+              poPlan: po.totalPlan,
+              grValue: gr.totalActual,
+              requestor: requestor,
+              issueDate: issueDate,
+              etaDate: etaDate,
+              actualDate: gr.postingDate,
+              lastUpdateAt: gr.lastUpdateAt,
+              lastUpdateBy: gr.lastUpdateBy
+            });
+            return accGr
           }, []);
           grs = [...grs.filter(y => y.poNumber !== po.poNumber)];
           return accPo.concat(grSet);
@@ -245,56 +245,85 @@ getTransactions = ash(async (year, orderNumber) => {
       pos = [...pos.filter(x => x.prNumber !== prNumber)];
       return accPr.concat(poSet);
     } else {
-      accPr.push({
-        prNumber: prNumber,
-        poNumber: null,
-        grNumber: null,
-        subject: subject,
-        items: items,
-        remarks: remarks,
-        headerTexts: [],
-        prValue: prValue,
-        prPlan: prPlan,
-        poValue: 0,
-        poPlan: 0,
-        grValue: 0,
-        requestor: requestor,
-        issueDate: issueDate,
-        etaDate: etaDate,
-        actualDate: null,
-        lastUpdateAt: lastUpdateAt,
-        lastUpdateBy: lastUpdateBy
-      });
-      return accPr;
+      let fGrs = grs.filter(z => z.prNumber === prNumber);
+      if(fGrs && fGrs.length > 0) {
+        const grSet = fGrs.reduce((accGr, gr) => {
+          accGr.push({
+            prNumber: prNumber,
+            poNumber: null,
+            grNumber: gr.grNumber,
+            subject: subject,
+            items: gr.items,
+            remarks: remarks.concat(gr.remarks),
+            headerTexts: gr.headerTexts,
+            prValue: prValue,
+            prPlan: prPlan,
+            poValue: 0,
+            poPlan: 0,
+            grValue: gr.totalActual,
+            requestor: requestor,
+            issueDate: issueDate,
+            etaDate: etaDate,
+            actualDate: gr.postingDate,
+            lastUpdateAt: gr.lastUpdateAt,
+            lastUpdateBy: gr.lastUpdateBy
+          });
+          return accGr;
+        }, []);
+        grs = [...grs.filter(z => z.prNumber !== prNumber)];
+        return accPr.concat(grSet);
+      } else {
+        accPr.push({
+          prNumber: prNumber,
+          poNumber: null,
+          grNumber: null,
+          subject: subject,
+          items: items,
+          remarks: remarks,
+          headerTexts: [],
+          prValue: prValue,
+          prPlan: prPlan,
+          poValue: 0,
+          poPlan: 0,
+          grValue: 0,
+          requestor: requestor,
+          issueDate: issueDate,
+          etaDate: etaDate,
+          actualDate: null,
+          lastUpdateAt: lastUpdateAt,
+          lastUpdateBy: lastUpdateBy
+        });
+        return accPr;
+      } 
     }
   }, []);
 
   const poReduced = pos.reduce((accPo, po) => {
     const subject = po.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, '');
     let fGrs = grs.filter(y => y.poNumber === po.poNumber);
-    if(fGrs && fGrs.length > 0) {
+    if (fGrs && fGrs.length > 0) {
       const grSet = fGrs.reduce((accGr, gr) => {
-          accGr.push({
-            prNumber: null,
-            poNumber: po.poNumber,
-            grNumber: gr.grNumber,
-            subject: subject,
-            items: po.items,
-            remarks: po.remarks.concat(gr.remarks),
-            headerTexts: gr.headerTexts,
-            prValue: 0,
-            prPlan: 0,
-            poValue: po.totalActual,
-            poPlan: po.totalPlan,
-            grValue: gr.totalActual,
-            requestor: po.username,
-            issueDate: po.issueDate,
-            etaDate: po.etaDate,
-            actualDate: gr.postingDate,
-            lastUpdateAt: gr.lastUpdateAt,
-            lastUpdateBy: gr.lastUpdateBy
-          });
-          return accGr
+        accGr.push({
+          prNumber: gr.prNumber,
+          poNumber: po.poNumber,
+          grNumber: gr.grNumber,
+          subject: subject,
+          items: po.items,
+          remarks: po.remarks.concat(gr.remarks),
+          headerTexts: gr.headerTexts,
+          prValue: 0,
+          prPlan: 0,
+          poValue: po.totalActual,
+          poPlan: po.totalPlan,
+          grValue: gr.totalActual,
+          requestor: po.username,
+          issueDate: po.issueDate,
+          etaDate: po.etaDate,
+          actualDate: gr.postingDate,
+          lastUpdateAt: gr.lastUpdateAt,
+          lastUpdateBy: gr.lastUpdateBy
+        });
+        return accGr
       }, []);
       grs = [...grs.filter(y => y.poNumber !== po.poNumber)];
       return accPo.concat(grSet);
@@ -326,7 +355,7 @@ getTransactions = ash(async (year, orderNumber) => {
 
   const grMapped = grs.map(gr => {
     return {
-      prNumber: null,
+      prNumber: gr.prNumber,
       poNumber: null,
       grNumber: gr.grNumber,
       subject: gr.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, ''),
@@ -351,7 +380,7 @@ getTransactions = ash(async (year, orderNumber) => {
   return Promise.all(prSet
     .concat(poReduced)
     .concat(grMapped)
-    );
+  );
 });
 
 // getTransactionsA = ash(async (orderNumber) => {

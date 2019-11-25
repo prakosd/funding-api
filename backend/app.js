@@ -8,6 +8,7 @@ const sapActualRoutes = require("./routes/sap-actuals");
 const sapEasRoutes = require("./routes/sap-eas");
 const sapRoutes = require("./routes/sap");
 const sapPrToPoRoutes = require("./routes/sap-pr-to-po");
+const sapPrToGrRoutes = require("./routes/sap-pr-to-gr");
 
 const app = express();
 // mongod --dbpath="D:\Software Development\Funding Tracking System\data"
@@ -47,6 +48,7 @@ app.use(apiWebPath + "sap/commitments", sapCommitmentRoutes);
 app.use(apiWebPath + "sap/actuals", sapActualRoutes);
 app.use(apiWebPath + "sap/eas", sapEasRoutes);
 app.use(apiWebPath + "sap/prtopos", sapPrToPoRoutes);
+app.use(apiWebPath + "sap/prtogrs", sapPrToGrRoutes);
 app.use(apiWebPath + "sap", sapRoutes);
 
 module.exports = app;

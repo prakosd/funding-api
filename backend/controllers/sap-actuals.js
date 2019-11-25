@@ -1,4 +1,5 @@
 const SapActual = require("../models/sap-actual");
+const SapPrToGrController = require("../controllers/sap-pr-to-gr");
 const ash = require('express-async-handler')
 
 exports.createOne = (req, res, next) => {
@@ -231,9 +232,11 @@ exports.getGrList = ash(async (year, orderNumber) => {
 
   const result = await aggregate;
   const promises = result.map(ash(async (row) => {
+    const pr = await SapPrToGrController.getPrNumber(row._id.orderNumber, row.referenceNumber);
+   
     return {
       orderNumber: row._id.orderNumber,
-      prNumber: null,
+      prNumber: pr ? pr.prNumber : null,
       poNumber: row._id.purchasingNumber,
       grNumber: row.referenceNumber,
       items: row.items,
