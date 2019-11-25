@@ -327,7 +327,7 @@ getTransactions = ash(async (year, orderNumber) => {
   const grMapped = grs.map(gr => {
     return {
       prNumber: null,
-      poNumber: gr.poNumber,
+      poNumber: null,
       grNumber: gr.grNumber,
       subject: gr.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, ''),
       items: gr.items,
