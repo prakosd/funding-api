@@ -184,7 +184,7 @@ getTransactions = ash(async (year, orderNumber) => {
     const prPlan = pr.totalPlan;
     const requestor = pr.eas ? pr.eas.recipient : pr.username;
     const issueDate = pr.eas ? pr.eas.creationDate : pr.issueDate;
-    const etaDate = pr.eas ? pr.eas.etaRequest : pr.etaDate;
+    const etaDate = pr.etaDate ? pr.etaDate : pr.eas.etaRequest;
     const lastUpdateAt = pr.lastUpdateAt;
     const lastUpdateBy = pr.lastUpdateBy;
     // find PO contains PR
@@ -304,7 +304,7 @@ getTransactions = ash(async (year, orderNumber) => {
     if (fGrs && fGrs.length > 0) {
       const grSet = fGrs.reduce((accGr, gr) => {
         accGr.push({
-          prNumber: gr.prNumber,
+          prNumber: null,
           poNumber: po.poNumber,
           grNumber: gr.grNumber,
           subject: subject,

@@ -10,6 +10,6 @@ router.get("/:orderNumber/:prNumber", SapPrToPoController.getMany);
 router.get("/:orderNumber/:prNumber/:poNumber", SapPrToPoController.getMany);
 
 router.put("/:orderNumber/:prNumber/:poNumber", checkAuth, extractFile, SapPrToPoController.upsertOne);
-router.delete("/:orderNumber/:prNumber/:poNumber", SapPrToPoController.deleteOne);
+router.delete("/:orderNumber/prs/:poNumber", SapPrToPoController.deleteOne);
 
 module.exports = router;

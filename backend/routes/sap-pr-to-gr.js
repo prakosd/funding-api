@@ -10,6 +10,6 @@ router.get("/:orderNumber/:prNumber", SapPrToGrController.getMany);
 router.get("/:orderNumber/:prNumber/:grNumber", SapPrToGrController.getMany);
 
 router.put("/:orderNumber/:prNumber/:grNumber", checkAuth, extractFile, SapPrToGrController.upsertOne);
-router.delete("/:orderNumber/:prNumber/:grNumber", SapPrToGrController.deleteOne);
+router.delete("/:orderNumber/prs/:grNumber", SapPrToGrController.deleteOne);
 
 module.exports = router;

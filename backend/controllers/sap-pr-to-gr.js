@@ -30,16 +30,13 @@ exports.getMany = (req, res, next) => {
 
 exports.deleteOne = (req, res, next) => {
     const orderNumber = req.params.orderNumber ? req.params.orderNumber.trim() : '';
-    const prNumber = req.params.prNumber ? req.params.prNumber.trim() : '';
     const grNumber = req.params.grNumber ? req.params.grNumber.trim() : '';
-
 
     const filter = {
         orderNumber: orderNumber,
-        prNumber: prNumber,
         grNumber: grNumber
     };
-
+    
     SapPrToGr.deleteMany(filter).then(result => {
         res.status(200).json({ message: "Deleting many successful!" });
     }).catch(error => {

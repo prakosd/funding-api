@@ -29,15 +29,15 @@ exports.getMany = (req, res, next) => {
 
 exports.deleteOne = (req, res, next) => {
     const orderNumber = req.params.orderNumber ? req.params.orderNumber.trim() : '';
-    const prNumber = req.params.prNumber ? req.params.prNumber.trim() : '';
     const poNumber = req.params.poNumber ? req.params.poNumber.trim() : '';
 
 
     const filter = {
         orderNumber: orderNumber,
-        prNumber: prNumber,
         poNumber: poNumber
     };
+
+    console.log(filter);
   
     SapPrToPo.deleteMany(filter).then(result => {
       res.status(200).json({ message: "Deleting many successful!" });
@@ -47,7 +47,7 @@ exports.deleteOne = (req, res, next) => {
      });
   };
 
-  exports.upsertOne = (req, res, next) => {
+exports.upsertOne = (req, res, next) => {
     const option = { runValidators: true, context: 'query', useFindAndModify: false, new: true, upsert: true, setDefaultsOnInsert: true };
 
     const orderNumber = req.params.orderNumber ? req.params.orderNumber.trim() : '';
@@ -71,7 +71,7 @@ exports.deleteOne = (req, res, next) => {
         poNumber: poNumber
     };
 
-    SapPrToPo.findOneAndUpdate(filter, set, option)
+SapPrToPo.findOneAndUpdate(filter, set, option)
       .then(result => {
         res.status(200).json({ message: "Updating successful!", data: result });
       })

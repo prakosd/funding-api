@@ -2,6 +2,7 @@ const ash = require('express-async-handler')
 const SapEasController = require("../controllers/sap-eas");
 const SapCommitment = require("../models/sap-commitment");
 const SapPrToPoController = require("../controllers/sap-pr-to-po");
+const SapCommitmentEtaController = require("../controllers/sap-commitment-eta");
 
 exports.createOne = (req, res, next) => {
   const body = JSON.parse(JSON.stringify(req.body));
@@ -232,7 +233,7 @@ exports.getPrList = ash(async (year, orderNumber) => {
   const result = await aggregate;
   const promises = result.map(ash(async (row) => {
     const eas = await SapEasController.getDetail(row._id.documentNumber);
-    
+    const eta = await SapCommitmentEtaController.getEtaDate(row._id.orderNumber, row._id.documentNumber);
     return {
       orderNumber: row._id.orderNumber,
       prNumber: row._id.documentNumber,
@@ -244,7 +245,7 @@ exports.getPrList = ash(async (year, orderNumber) => {
       totalActual: row.totalActual,
       totalPlan: row.totalPlan,
       issueDate: row.documentDate,
-      etaDate: row.debitDate,
+      etaDate: eta ? eta.etaDate : row.debitDate,
       username: row.username,
       lastUpdateAt: row.lastUpdateAt,
       lastUpdateBy: row.lastUpdateBy
@@ -286,6 +287,8 @@ exports.getPoList = ash(async (year, orderNumber) => {
   const result = await aggregate;
   const promises = result.map(ash(async (row) => {
     const pr = await SapPrToPoController.getPrNumber(row._id.orderNumber, row._id.documentNumber);
+    const eta = await SapCommitmentEtaController.getEtaDate(row._id.orderNumber, row._id.documentNumber);
+    
     return {
       orderNumber: row._id.orderNumber,
       prNumber: pr ? pr.prNumber : null,
@@ -296,7 +299,7 @@ exports.getPoList = ash(async (year, orderNumber) => {
       totalActual: row.totalActual,
       totalPlan: row.totalPlan,
       issueDate: row.documentDate,
-      etaDate: row.debitDate,
+      etaDate: eta ? eta.etaDate : row.debitDate,
       username: row.username,
       lastUpdateAt: row.lastUpdateAt,
       lastUpdateBy: row.lastUpdateBy
