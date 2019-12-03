@@ -170,12 +170,14 @@ getOrderNumbers = ash(async (year, orderNumber, isTransactions) => {
 });
 
 getTransactions = ash(async (year, orderNumber) => {
+
   const prs = await SapCommitmentController.getPrList(year, orderNumber);
   let pos = await SapCommitmentController.getPoList(year, orderNumber);
   let grs = await SapActualController.getGrList(year, orderNumber);
 
   const prSet = prs.reduce((accPr, pr) => {
     // set base PR value
+    const orderNumber = pr.orderNumber;
     const prNumber = pr.prNumber;
     const subject = pr.eas ? pr.eas.subject : pr.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, '');
     const items = pr.items;
@@ -195,6 +197,7 @@ getTransactions = ash(async (year, orderNumber) => {
         if (fGrs && fGrs.length > 0) {
           const grSet = fGrs.reduce((accGr, gr) => {
             accGr.push({
+              orderNumber: orderNumber,
               prNumber: prNumber,
               poNumber: po.poNumber,
               grNumber: gr.grNumber,
@@ -220,6 +223,7 @@ getTransactions = ash(async (year, orderNumber) => {
           return accPo.concat(grSet);
         } else {
           accPo.push({
+            orderNumber: orderNumber,
             prNumber: prNumber,
             poNumber: po.poNumber,
             grNumber: null,
@@ -249,6 +253,7 @@ getTransactions = ash(async (year, orderNumber) => {
       if(fGrs && fGrs.length > 0) {
         const grSet = fGrs.reduce((accGr, gr) => {
           accGr.push({
+            orderNumber: orderNumber,
             prNumber: prNumber,
             poNumber: null,
             grNumber: gr.grNumber,
@@ -274,6 +279,7 @@ getTransactions = ash(async (year, orderNumber) => {
         return accPr.concat(grSet);
       } else {
         accPr.push({
+          orderNumber, orderNumber,
           prNumber: prNumber,
           poNumber: null,
           grNumber: null,
@@ -304,6 +310,7 @@ getTransactions = ash(async (year, orderNumber) => {
     if (fGrs && fGrs.length > 0) {
       const grSet = fGrs.reduce((accGr, gr) => {
         accGr.push({
+          orderNumber: po.orderNumber,
           prNumber: null,
           poNumber: po.poNumber,
           grNumber: gr.grNumber,
@@ -329,6 +336,7 @@ getTransactions = ash(async (year, orderNumber) => {
       return accPo.concat(grSet);
     } else {
       accPo.push({
+        orderNumber: po.orderNumber,
         prNumber: null,
         poNumber: po.poNumber,
         grNumber: null,
@@ -355,6 +363,7 @@ getTransactions = ash(async (year, orderNumber) => {
 
   const grMapped = grs.map(gr => {
     return {
+      orderNumber: gr.orderNumber,
       prNumber: gr.prNumber,
       poNumber: null,
       grNumber: gr.grNumber,

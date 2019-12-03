@@ -8,6 +8,7 @@ router.get("/:year/full", SapController.getFull);
 router.get("/:year/full/:orderNumber", SapController.getFull);
 router.get("/:year/sum", SapController.getSum);
 router.get("/:year/sum/:orderNumber", SapController.getSum);
+router.get("/:year/details", SapController.getDetails);
 router.get("/:year/details/:orderNumber", SapController.getDetails);
 
 module.exports = router;

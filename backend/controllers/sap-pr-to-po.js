@@ -61,7 +61,6 @@ exports.upsertOne = (req, res, next) => {
     };
 
     if (orderNumber === '' || prNumber === '' || poNumber === '') {
-        console.log(filter);
         res.status(500).json({ message: "Updating failed!", data: filter, error: error });
     }
 

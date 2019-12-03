@@ -205,7 +205,7 @@ exports.getGrList = ash(async (year, orderNumber) => {
   aggregate.match({
     $and: [
       { isLinked: true },
-      { orderNumber: orderNumber },
+      { orderNumber: new RegExp(orderNumber) },
       { postingDate: { $gte: startDate, $lt: endDate } }
     ] 
   }); 

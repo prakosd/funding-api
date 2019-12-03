@@ -208,7 +208,7 @@ exports.getPrList = ash(async (year, orderNumber) => {
   aggregate.match({
     $and: [
       { isLinked: true },
-      { orderNumber: orderNumber },
+      { orderNumber: new RegExp(orderNumber) },
       { category: 'PReq' },
       { debitDate: { $gte: startDate, $lt: endDate } }
     ] 
@@ -262,7 +262,7 @@ exports.getPoList = ash(async (year, orderNumber) => {
   aggregate.match({
     $and: [
       { isLinked: true },
-      { orderNumber: orderNumber },
+      { orderNumber: new RegExp(orderNumber) },
       { category: 'POrd' },
       { debitDate: { $gte: startDate, $lt: endDate } }
     ] 
