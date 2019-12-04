@@ -217,7 +217,7 @@ exports.getGrList = ash(async (year, orderNumber) => {
         $ifNull: ['$purchasingNumber', '$referenceNumber'] 
        }
      },
-     items: { $addToSet: '$name' },
+     items: { $addToSet: { name: '$name', value: '$actualValue' } },
      headerTexts: { $addToSet: '$headerText' },
      remarks: { $addToSet: '$remark' },
      referenceNumber: { $first: '$referenceNumber' },

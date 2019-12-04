@@ -218,7 +218,7 @@ exports.getPrList = ash(async (year, orderNumber) => {
       orderNumber: '$orderNumber',
       documentNumber: '$documentNumber'
      },
-     items: { $addToSet: '$name' },
+     items: { $addToSet: { name: '$name', value: '$actualValue' } },
      remarks: { $addToSet: '$remark' },
      totalActual: { $sum: '$actualValue' },
      totalPlan: { $sum: '$planValue' },
@@ -272,7 +272,7 @@ exports.getPoList = ash(async (year, orderNumber) => {
       orderNumber: '$orderNumber',
       documentNumber: '$documentNumber'
      },
-     items: { $addToSet: '$name' },
+     items: { $addToSet: { name: '$name', value: '$actualValue' } },
      remarks: { $addToSet: '$remark' },
      totalActual: { $sum: '$actualValue' },
      totalPlan: { $sum: '$planValue' },

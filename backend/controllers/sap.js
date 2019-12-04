@@ -179,7 +179,7 @@ getTransactions = ash(async (year, orderNumber) => {
     // set base PR value
     const orderNumber = pr.orderNumber;
     const prNumber = pr.prNumber;
-    const subject = pr.eas ? pr.eas.subject : pr.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, '');
+    const subject = pr.eas ? pr.eas.subject : pr.items.reduce(function (a, b) { return a.value > b.value ? a : b; }, '').name;
     const items = pr.items;
     const remarks = pr.remarks;
     const prValue = pr.totalActual;
@@ -305,7 +305,7 @@ getTransactions = ash(async (year, orderNumber) => {
   }, []);
 
   const poReduced = pos.reduce((accPo, po) => {
-    const subject = po.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, '');
+    const subject = po.items.reduce(function (a, b) { return a.value > b.value ? a : b; }, '').name;
     let fGrs = grs.filter(y => y.poNumber === po.poNumber);
     if (fGrs && fGrs.length > 0) {
       const grSet = fGrs.reduce((accGr, gr) => {
@@ -367,7 +367,7 @@ getTransactions = ash(async (year, orderNumber) => {
       prNumber: gr.prNumber,
       poNumber: null,
       grNumber: gr.grNumber,
-      subject: gr.items.reduce(function (a, b) { return a.length > b.length ? a : b; }, ''),
+      subject: gr.items.reduce(function (a, b) { return a.value > b.value ? a : b; }, '').name,
       items: gr.items,
       remarks: gr.remarks,
       headerTexts: gr.headerTexts,
